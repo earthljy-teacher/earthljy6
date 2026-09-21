@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>은빛 변신과 전자의 비밀 : 산화·환원 게임 시뮬레이션</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gaegu&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+/* ===== 글꼴 : a시네마L (기기에 설치된 글꼴 사용, 없으면 Gaegu로 대체) =====
+   ※ TTF 파일을 base64로 내장하려면 아래 @font-face 의 src 뒤에 url(data:font/ttf;base64,...) 를 추가하세요. */
+@font-face{font-family:'a시네마L';src:local('a시네마L'),local('a시네마'),local('aCinemaL');font-weight:400;font-style:normal;}
+:root{
+  --ink:#2f3b57; --mute:#6c7a99; --line:#cfe0ff; --bg1:#e7f5ff; --bg2:#fff4e0;
+  --red:#d6336c; --blue:#1c7ed6; --green:#2b9a44; --orange:#e8590c; --violet:#7048e8; --teal:#0c8599;
+}
+*{box-sizing:border-box;font-family:'a시네마L','a시네마','Gaegu','Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-weight:400 !important;font-synthesis:none;}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font-size:19px;line-height:1.65;background:linear-gradient(160deg,var(--bg1),var(--bg2));min-height:100vh;-webkit-text-size-adjust:100%}
+b,strong,h1,h2,h3,h4,th{font-weight:400}
+.k-r{color:var(--red)} .k-b{color:var(--blue)} .k-g{color:var(--green)} .k-o{color:var(--orange)} .k-v{color:var(--violet)} .k-t{color:var(--teal)}
+.mute{color:var(--mute)}
+
+/* ----- 헤더 (오른쪽 위: 로고 + 이메일) ----- */
+header.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;max-width:1040px;margin:0 auto;padding:14px 18px 6px}
+.title h1{margin:0;font-size:34px;color:var(--violet);line-height:1.2}
+.title p{margin:4px 0 0;color:var(--mute);font-size:17px}
+.brand{display:flex;flex-direction:column;align-items:center;flex-shrink:0;min-width:150px}
+.brand img{width:76px;height:76px;object-fit:contain;display:block}
+.brand .mail{font-size:15px;color:var(--blue);margin-top:-4px;white-space:nowrap}
+
+/* ----- 탭 ----- */
+nav.tabs{display:flex;gap:8px;flex-wrap:wrap;max-width:1040px;margin:6px auto 0;padding:0 18px;align-items:center}
+.tab{font-size:17px;padding:8px 14px;border-radius:14px 14px 4px 4px;border:3px solid var(--line);background:#fff;color:var(--mute);cursor:pointer}
+.tab.on{background:var(--violet);border-color:var(--violet);color:#fff}
+.tab.clear{border-color:#8ce99a;color:var(--green)}
+.tab.on.clear{color:#fff}
+.tab.lock{background:#f1f3f5;border-color:#dee2e6;color:#adb5bd;cursor:not-allowed}
+.tab.result-tab:not(.lock){border-color:#ffc078;color:var(--orange)}
+.tab.result-tab.on{background:var(--orange);color:#fff;border-color:var(--orange)}
+
+
+.idform{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+.idrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.idrow input{font-size:20px;padding:6px 10px;border:3px solid #bac8ff;border-radius:14px;color:var(--ink);width:96px;text-align:center}
+.idrow input.wide{width:200px;text-align:left;padding:6px 12px}
+.idrow input:focus{outline:none;border-color:var(--violet)}
+main{max-width:1040px;margin:10px auto 60px;padding:0 18px}
+.panel{display:none}
+.panel.on{display:block;animation:fadein .35s}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.card{background:#fff;border:3px solid var(--line);border-radius:22px;box-shadow:0 6px 0 #dbe8fb;padding:16px 18px;margin-bottom:16px}
+.stagehead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.stagehead h2{margin:0;font-size:28px;color:var(--blue)}
+.chip{display:inline-block;font-size:15px;padding:1px 12px;border-radius:12px;background:#fff0f6;color:var(--red);border:2px solid #ffc9de}
+.mission{display:flex;gap:12px;align-items:center;background:#fff9db;border:3px dashed #ffc078;border-radius:18px;padding:10px 16px;margin-bottom:14px}
+.mission .mi{font-size:38px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.st{font-size:15px;padding:2px 12px;border-radius:12px;background:#f1f3f5;color:#adb5bd}
+.st.c{background:#fff3bf;color:var(--orange);outline:2px solid #ffd43b}
+.st.d{background:#d3f9d8;color:var(--green)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.two{grid-template-columns:1fr} .title h1{font-size:25px} body{font-size:18px} .brand{min-width:110px}.brand img{width:56px;height:56px}.brand .mail{font-size:12px}}
+
+/* ----- 버튼 ----- */
+.btn{font-size:19px;color:#fff;background:linear-gradient(#5aa9ff,#2f80ed);border:0;border-radius:16px;padding:10px 22px;box-shadow:0 5px 0 #1c5fb8,0 8px 14px rgba(0,0,0,.12);cursor:pointer;transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #1c5fb8}
+.btn.green{background:linear-gradient(#69db7c,#2f9e44);box-shadow:0 5px 0 #237a34,0 8px 14px rgba(0,0,0,.12)}
+.btn.orange{background:linear-gradient(#ffa94d,#f76707);box-shadow:0 5px 0 #c24d05,0 8px 14px rgba(0,0,0,.12)}
+.btn.violet{background:linear-gradient(#9775fa,#6741d9);box-shadow:0 5px 0 #4c2fb0,0 8px 14px rgba(0,0,0,.12)}
+.btn.pink{background:linear-gradient(#ff8fb8,#e64980);box-shadow:0 5px 0 #b0335f,0 8px 14px rgba(0,0,0,.12)}
+.btn.ghost{background:#fff;color:var(--blue);border:2px solid var(--blue);box-shadow:0 3px 0 #a5d8ff}
+.btn.small{font-size:16px;padding:6px 14px}
+.btn[disabled]{filter:grayscale(1);opacity:.5;cursor:not-allowed}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.glow{animation:glow 1.2s infinite alternate}
+@keyframes glow{from{box-shadow:0 5px 0 #237a34,0 0 0 rgba(43,154,68,0)}to{box-shadow:0 5px 0 #237a34,0 0 22px rgba(43,154,68,.8)}}
+
+/* ----- 메시지 ----- */
+.msg{min-height:2.8em;margin-top:10px;padding:8px 14px;border-radius:14px;background:#f1f3f5;color:var(--ink)}
+.msg.ok{background:#ebfbee;color:#237a34}
+.msg.bad{background:#fff0f6;color:var(--red)}
+.msg.info{background:#e7f5ff;color:var(--blue)}
+.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(30px);background:#fff;border:3px solid var(--violet);color:var(--violet);border-radius:18px;padding:10px 22px;opacity:0;pointer-events:none;transition:.35s;z-index:9998;max-width:92vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%)}
+
+/* ----- 드래그 ----- */
+.dragghost{position:fixed;transform:translate(-50%,-50%) scale(1.08);pointer-events:none;z-index:9999;opacity:.96;filter:drop-shadow(0 8px 10px rgba(0,0,0,.25))}
+.eghost{width:34px;height:34px;border-radius:50%;background:#ffd43b;border:3px solid #f08c00;color:#7a4300;display:flex;align-items:center;justify-content:center;font-size:14px}
+.dragging{opacity:.3}
+.wardrobe{display:flex;flex-wrap:wrap;gap:10px}
+.tile{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 8px;background:#fff;border:3px solid #ffd8a8;border-radius:18px;cursor:grab;user-select:none;min-width:98px;touch-action:none}
+.tile .emo{font-size:44px;line-height:1.1}
+.tile.off{opacity:.35;pointer-events:none;filter:grayscale(1)}
+.avatarbox{text-align:center}
+.avatarbox svg{width:100%;max-width:280px;height:auto;display:block;margin:0 auto}
+.layer{opacity:0;transition:opacity .45s}
+.layer.on{opacity:1}
+.wornlist{margin-top:6px;color:var(--mute);font-size:17px;min-height:3.4em}
+
+/* ----- 도구 확인 ----- */
+.tools{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media(max-width:760px){.tools{grid-template-columns:repeat(2,1fr)}}
+.tool{border:3px solid #d0ebff;border-radius:18px;padding:8px;text-align:center;cursor:pointer;background:#fff;position:relative}
+.tool svg,.tool .emo{width:64px;height:64px;font-size:52px;line-height:64px;display:block;margin:0 auto}
+.tool.ck{border-color:#8ce99a;background:#ebfbee}
+.tool.ck::after{content:'✔';position:absolute;top:2px;right:8px;color:var(--green)}
+
+/* ----- 장면 ----- */
+.scene{position:relative;width:100%;background:#fff;border:3px solid var(--line);border-radius:22px;overflow:hidden}
+.scene>svg{display:block;width:100%;height:auto}
+.ov{position:absolute}
+.scene.zoom>svg,.scene.zoom>.ov{transition:transform 1.1s ease,opacity 1.1s ease;transform:scale(2.8);opacity:0}
+.flash{position:absolute;inset:0;background:radial-gradient(circle at 65% 45%,#fff 0,#fffbe0 40%,rgba(255,255,255,0) 75%);opacity:0;pointer-events:none}
+.flash.on{animation:flash 1.3s ease-out}
+@keyframes flash{0%{opacity:0}15%{opacity:.9}100%{opacity:0}}
+.flame{transform-box:fill-box;transform-origin:50% 100%;animation:flick .18s infinite alternate}
+@keyframes flick{from{transform:scale(1,1)}to{transform:scale(.93,1.07)}}
+.pieceov{cursor:grab;touch-action:none;filter:drop-shadow(0 4px 4px rgba(0,0,0,.25))}
+.tongs{cursor:grab;touch-action:none;filter:drop-shadow(0 4px 4px rgba(0,0,0,.25))}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.cbtn{font-size:17px;padding:5px 14px;border-radius:14px;border:3px solid #ffd8a8;background:#fff;color:var(--orange);cursor:pointer}
+.cbtn.on{background:var(--orange);color:#fff;border-color:var(--orange)}
+.cbtn[disabled]{opacity:.45;cursor:not-allowed}
+
+/* ----- 미시 세계 ----- */
+.micro svg{width:100%;height:auto;display:block;background:#fff;border-radius:16px;border:3px solid #d0ebff}
+.el{cursor:grab;touch-action:none}
+.el.used{display:none}
+.wob{animation:wob 1.6s ease-in-out infinite alternate}
+@keyframes wob{from{transform:translate(0,0)}to{transform:translate(3px,-3px)}}
+.fl1{animation:fl 3s ease-in-out infinite alternate}
+.fl2{animation:fl 3.7s ease-in-out infinite alternate-reverse}
+@keyframes fl{from{transform:translate(0,0)}to{transform:translate(5px,-7px)}}
+.mv{transition:transform 1.3s ease}
+.fade{transition:opacity .8s}
+.infoRow{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:17px}
+.infoRow span{background:#f8f9fa;border-radius:12px;padding:2px 12px}
+.eqbox{margin-top:12px;background:#f3f0ff;border:3px solid #d0bfff;border-radius:16px;padding:10px 14px;text-align:center;font-size:22px;animation:fadein .6s}
+
+/* ----- 판단 / 선택 ----- */
+.sent{font-size:21px;margin:12px 0;line-height:2.3}
+.opt2{display:inline-flex;gap:4px;vertical-align:middle;margin:0 4px}
+.o2{font-size:18px;padding:0 12px;border-radius:12px;border:3px solid #bac8ff;background:#fff;color:var(--violet);cursor:pointer}
+.o2.sel{background:var(--violet);color:#fff;border-color:var(--violet)}
+.o2.right{background:var(--green);border-color:var(--green);color:#fff}
+.o2.wrong{background:#fff0f6;border-color:var(--red);color:var(--red)}
+select.sel{font-size:20px;padding:2px 8px;border:3px solid #bac8ff;border-radius:12px;color:var(--violet);background:#fff}
+select.sel.right{border-color:var(--green);color:var(--green);background:#ebfbee}
+select.sel.wrong{border-color:var(--red);color:var(--red);background:#fff0f6}
+.bigeq{font-size:26px;text-align:center;margin:14px 0;line-height:2.4}
+
+/* ----- 분석기 ----- */
+.tray{display:flex;gap:10px;flex-wrap:wrap;min-height:96px;padding:10px;border:3px dashed #bac8ff;border-radius:16px;background:#f8f9ff}
+.mcard{background:#fff;border:3px solid #bac8ff;border-radius:16px;padding:6px 12px;cursor:grab;user-select:none;touch-action:none;min-width:170px}
+.mcard .mtag{font-size:13px;color:var(--mute)}
+.mcard .mname{font-size:18px;color:var(--ink)}
+.mcard .mchg{font-size:22px;color:var(--violet)}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px}
+@media(max-width:760px){.slots{grid-template-columns:1fr}}
+.slot{min-height:150px;border:4px dashed;border-radius:18px;padding:8px 10px}
+.slot.ox{border-color:#ff8fb8;background:#fff5f9}
+.slot.re{border-color:#74c0fc;background:#f1f9ff}
+.slot h4{margin:0 0 4px;font-size:19px}
+.placed{display:inline-block;background:#fff;border-radius:12px;padding:2px 10px;margin:3px;border:2px solid #dee2e6;font-size:17px}
+.eqline{text-align:center;font-size:24px;color:var(--teal);margin:6px 0}
+
+/* ----- 퀴즈 ----- */
+.qcard{border:3px solid #d0ebff;border-radius:18px;padding:12px 16px;margin-bottom:14px;background:#fff}
+.qcard.done{border-color:#8ce99a;background:#f6fff7}
+.qno{color:var(--violet);font-size:20px}
+.opt{display:block;width:100%;text-align:left;font-size:19px;color:var(--ink);background:#f8f9fa;border:3px solid #e9ecef;border-radius:14px;padding:6px 14px;margin:6px 0;cursor:pointer}
+.opt:hover{border-color:#bac8ff}
+.opt.wrong{background:#fff0f6;border-color:#ffa8c9;color:var(--red)}
+.opt.right{background:#ebfbee;border-color:#8ce99a;color:#237a34}
+.opt[disabled]{cursor:default}
+textarea{width:100%;font-size:19px;color:var(--ink);border:3px solid #bac8ff;border-radius:14px;padding:10px 12px;resize:vertical;line-height:1.6}
+textarea:focus{outline:none;border-color:var(--violet)}
+.chk{display:flex;gap:8px;align-items:flex-start;margin:3px 0;font-size:18px}
+.chk .ic{width:26px;flex-shrink:0}
+.sample{background:#f3f0ff;border-left:6px solid var(--violet);border-radius:10px;padding:8px 14px;margin-top:8px;color:var(--violet)}
+
+/* ----- 리포트 ----- */
+.report{background:#fff;border:4px solid #ffc078;border-radius:26px;padding:22px 26px;box-shadow:0 8px 0 #ffe8cc}
+.rep-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:3px dashed #ffd8a8;padding-bottom:10px}
+.rep-title{font-size:34px;color:var(--orange);line-height:1.2}
+.rep-sub{color:var(--mute);font-size:17px}
+.rep-top{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:14px 0}
+.gbadge{width:110px;height:110px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:64px;color:#fff;box-shadow:0 6px 0 rgba(0,0,0,.15);flex-shrink:0}
+.rep h3{font-size:23px;color:var(--blue);margin:20px 0 6px;border-left:8px solid var(--blue);padding-left:10px}
+.scale{display:flex;gap:6px;flex-wrap:wrap}
+.scale span{padding:1px 14px;border-radius:12px;background:#f1f3f5;color:#868e96;font-size:16px}
+.scale span.me{color:#fff}
+.prow{display:grid;grid-template-columns:2.2fr 1.4fr 1fr;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid #f1f3f5}
+@media(max-width:760px){.prow{grid-template-columns:1fr}}
+.pname{font-size:18px}
+.psub{font-size:15px;color:var(--mute)}
+.bar{height:14px;background:#e9ecef;border-radius:8px;overflow:hidden}
+.bar i{display:block;height:100%}
+.stg{display:flex;gap:8px;flex-wrap:wrap}
+.stg span{background:#ebfbee;color:var(--green);border-radius:12px;padding:2px 12px;font-size:17px}
+.ans{background:#f8f9fa;border-radius:12px;padding:8px 14px;margin:6px 0;white-space:pre-wrap}
+.fbtext p{margin:8px 0}
+.plan{background:#fff9db;border:3px dashed #ffc078;border-radius:16px;padding:10px 14px}
+.planitem{background:#fff;border:3px solid #ffd8a8;border-radius:14px;padding:8px 12px;margin:8px 0;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.okline{background:#ebfbee;border-radius:12px;padding:2px 12px;margin:4px 0;color:var(--green);font-size:17px}
+.clearcard{text-align:center;padding:26px}
+.clearcard .big{font-size:70px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="title">
+    <h1>🥈 은빛 변신과 전자의 비밀</h1>
+    <p>산화·환원 게임 시뮬레이션 · 고등학교 2학년 통합과학</p>
+  </div>
+  <div class="brand">
+    <img id="brandimg" alt="EARTH LJY 로고" src="data:image/png;base64,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">
+    <div class="mail">earthljy@ai.jne.kr</div>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs"></nav>
+
+<main>
+  <section class="panel on" id="panel-intro"></section>
+  <section class="panel" id="panel-s1"></section>
+  <section class="panel" id="panel-s2"></section>
+  <section class="panel" id="panel-s3"></section>
+  <section class="panel" id="panel-s4"></section>
+  <section class="panel" id="panel-quiz"></section>
+  <section class="panel" id="panel-result"></section>
+  <section class="panel" id="panel-reinf"></section>
+</main>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   기본 도구
+===================================================================== */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const fmt=n=>{const v=Math.round(n*10)/10;return Number.isInteger(v)?String(v):v.toFixed(1)};
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+/* 효과음 (Web Audio) */
+let AC=null,soundOn=true;
+function tone(f,d=.12,type='sine',v=.07,delay=0){if(!soundOn)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;const t=AC.currentTime+delay;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
+const sfx={ok(){tone(660,.1);tone(880,.16,'sine',.07,.09)},bad(){tone(190,.22,'sawtooth',.05)},pop(){tone(520,.06,'triangle')},win(){[523,659,784,1046].forEach((f,i)=>tone(f,.2,'sine',.07,i*.11))},snip(){tone(900,.04,'square',.03);tone(700,.04,'square',.03,.07)},zap(){tone(1300,.08,'sawtooth',.035);tone(420,.16,'sawtooth',.035,.07)},drop(){tone(430,.09,'sine',.07)}};
+let toastT=null;
+function toast(m){const t=$('#toast');t.innerHTML=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600)}
+
+/* 드래그 도우미 (마우스/터치 공용) */
+function makeDrag(node,{ghost,onDrop,enabled=()=>true}){
+  node.style.touchAction='none';
+  node.addEventListener('pointerdown',e=>{
+    if(!enabled())return; e.preventDefault();
+    let g;
+    if(ghost)g=ghost(node);else{g=node.cloneNode(true);g.removeAttribute('id');g.style.width=node.getBoundingClientRect().width+'px';}
+    g.classList.add('dragghost');g.style.position='fixed';g.style.margin='0';g.style.right='auto';g.style.bottom='auto';document.body.appendChild(g);
+    const mv=(x,y)=>{g.style.left=x+'px';g.style.top=y+'px'};mv(e.clientX,e.clientY);
+    node.classList.add('dragging');
+    const sx=e.clientX,sy=e.clientY;
+    const move=ev=>mv(ev.clientX,ev.clientY);
+    const up=ev=>{
+      window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
+      g.remove();node.classList.remove('dragging');
+      let tgt=null;
+      for(const n of document.elementsFromPoint(ev.clientX,ev.clientY)){const t=n.closest&&n.closest('[data-drop]');if(t){tgt=t;break}}
+      onDrop(tgt,{x:ev.clientX,y:ev.clientY,moved:Math.hypot(ev.clientX-sx,ev.clientY-sy)});
+    };
+    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
+  });
+}
+const eghost=()=>{const d=document.createElement('div');d.className='eghost';d.textContent='e⁻';return d};
+function say(box,text,type='info'){const m=$('#msg',box);if(!m)return;m.className='msg '+type;m.innerHTML=text;if(type==='bad'){m.classList.remove('shake');void m.offsetWidth;m.classList.add('shake')}}
+const mission=(icon,html)=>`<div class="mission"><div class="mi">${icon}</div><div>${html}</div></div>`;
+const stepBar=(labels,cur)=>`<div class="steps">${labels.map((l,i)=>`<span class="st ${i+1<cur?'d':i+1===cur?'c':''}">${i+1<cur?'✔':i+1} ${l}</span>`).join('')}</div>`;
+function tween(from,to,ms,fn,end){const t0=performance.now();(function f(t){const p=clamp((t-t0)/ms,0,1);fn(from+(to-from)*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f);else if(end)end()})(t0)}
+
+/* =====================================================================
+   상태 · 점수 체계
+===================================================================== */
+const PARTS={
+  p1:{name:'안전 수칙 준수 (복장·착용 순서)',max:10,pen:.2,stage:'Stage 1'},
+  p2:{name:'구리 → 은 이온 전자 이동과 산화·환원 판단',max:15,pen:.12,stage:'Stage 2'},
+  p3:{name:'마그네슘 → 산소 전자 이동',max:10,pen:.15,stage:'Stage 3'},
+  p4:{name:'반응식 해석과 이동 전자 수',max:10,pen:.2,stage:'Stage 3'},
+  p5:{name:'산화·환원 분류 (전자 스캐너)',max:15,pen:.1,stage:'Stage 4'},
+  p6:{name:'학습 점검 객관식 (5문항)',max:20,stage:'학습 점검'},
+  p7:{name:'서술형 설명 능력 (2문항)',max:20,stage:'학습 점검'}
+};
+const ORDER=['p1','p2','p3','p4','p5','p6','p7'];
+const CAP=.92;          // 보충 시뮬레이션으로 얻을 수 있는 한 과정의 최대 비율
+const DEF=.9;           // 이 비율 미만이면 '부족한 수행과정'
+const GRADES=[['A',90,'#2b9a44','탁월'],['B',80,'#1c7ed6','우수'],['C',70,'#e8590c','보통'],['D',60,'#d6336c','미흡'],['F',0,'#868e96','재도전']];
+const gradeOf=t=>GRADES.find(g=>t>=g[1]);
+
+let S;
+const idLabel=()=>`${S.grade}학년 ${S.cls}반 ${S.num}번`;
+function initState(){
+  S={name:'',grade:0,cls:0,num:0,tab:'intro',unlocked:{intro:true,s1:false,s2:false,s3:false,s4:false,quiz:false,result:false},
+     done:{s1:false,s2:false,s3:false,s4:false,quiz:false},mounted:{},
+     p:{},mcq:MCQ.map(()=>({wrong:0,credit:0,done:false,retry:0})),wr:WQ.map(()=>({text:'',score:null,items:[],att:0,firstMissing:[],retry:0}))};
+  ['p1','p2','p3','p4','p5'].forEach(k=>S.p[k]={rec:null,score:null,scored:false,retry:0});
+}
+const newRec=()=>({err:0,hint:0,tags:{}});
+function tag(rec,t,w=1){rec.tags[t]=(rec.tags[t]||0)+w;rec.err+=w}
+const fracOf=(rec,pen)=>clamp(1-rec.err*pen-rec.hint*.05,.3,1);
+function applyFirst(id,rec){const P=S.p[id];if(P.scored)return;P.rec=rec;P.score=PARTS[id].max*fracOf(rec,PARTS[id].pen);P.scored=true}
+function applyRetry(id,rec){const P=S.p[id],M=PARTS[id].max;const raw=M*fracOf(rec,PARTS[id].pen);const credit=Math.min(raw,M*CAP);const before=P.score;P.retry++;P.lastRec=rec;if(credit>P.score)P.score=credit;return{before,after:P.score}}
+function partScore(id){
+  if(id==='p6')return S.mcq.reduce((a,q)=>a+q.credit,0);
+  if(id==='p7')return S.wr.reduce((a,w)=>a+(w.score||0),0);
+  return S.p[id].score||0;
+}
+const totalScore=()=>ORDER.reduce((a,id)=>a+partScore(id),0);
+const isDef=id=>partScore(id)<PARTS[id].max*DEF-1e-6;
+const gainOf=id=>Math.max(0,PARTS[id].max*CAP-partScore(id));
+
+/* =====================================================================
+   탭 / 화면 전환
+===================================================================== */
+const TABS=[['s1','① 안전 실험실'],['s2','② 은빛 변신'],['s3','③ 불꽃 속 전자'],['s4','④ 전자 분석기'],['quiz','⑤ 학습 점검'],['result','🏆 미션 성공']];
+function renderTabs(){
+  const cur=S.tab==='reinf'?'result':S.tab;
+  $('#tabs').innerHTML=TABS.map(([id,l])=>{
+    const lock=!S.unlocked[id],clr=S.done[id];
+    return `<button class="tab ${id==='result'?'result-tab':''} ${cur===id?'on':''} ${lock?'lock':''} ${clr?'clear':''}" data-t="${id}">${lock?'🔒 ':clr?'✔ ':''}${l}</button>`;
+  }).join('');
+  $$('.tab',$('#tabs')).forEach(b=>b.onclick=()=>{const id=b.dataset.t;if(!S.unlocked[id]){toast('🔒 앞 단계 미션을 먼저 완료해 주세요!');sfx.bad();return}go(id)});
+}
+function go(id){
+  S.tab=id;
+  if(!S.mounted[id]&&MOUNT[id]){S.mounted[id]=true;MOUNT[id]()}
+  if(id==='result')renderResult();
+  $$('.panel').forEach(p=>p.classList.toggle('on',p.id==='panel-'+id));
+  renderTabs();window.scrollTo({top:0,behavior:'smooth'});
+}
+function unlock(id){S.unlocked[id]=true;renderTabs()}
+function shell(id,chip,title){
+  const p=$('#panel-'+id);
+  p.innerHTML=`<div class="stagehead"><div><span class="chip">${chip}</span><h2>${title}</h2></div><button class="btn ghost small" id="reset-${id}">↺ 이 단계 다시 하기</button></div><div id="gb-${id}"></div>`;
+  $('#reset-'+id).onclick=()=>{sfx.pop();MOUNT[id]()};
+  return $('#gb-'+id);
+}
+function stageEnd(box,nextId,text,btn){
+  sfx.win();
+  box.innerHTML=`<div class="card clearcard"><div class="big">🎉</div><p style="font-size:22px">${text}</p><button class="btn green glow" id="nextGo">${btn}</button></div>`;
+  $('#nextGo',box).onclick=()=>go(nextId);
+}
+
+/* =====================================================================
+   시작 화면
+===================================================================== */
+function mountIntro(){
+  $('#panel-intro').innerHTML=`
+  <div class="card">
+    <div class="chip">사건 파일 No.47</div>
+    <h2 style="font-size:28px;margin:6px 0;color:var(--blue)">페트리접시 속 구리 테이프가 은빛으로 변했다?!</h2>
+    <p>구리 테이프를 <span class="k-b">질산 은 수용액</span>에 담갔더니 표면이 반짝이는 <span class="k-v">은빛</span>으로 변했어요. 눈에 보이지 않는 작은 입자 세계에서는 무슨 일이 벌어진 걸까요? 전자를 직접 끌어다 옮겨 보며 <span class="k-r">산화·환원</span>의 비밀을 풀어 보세요!</p>
+    <div class="two">
+      <div>
+        <div class="k-o" style="font-size:21px">🎯 학습 목표</div>
+        <p style="margin:4px 0">① 실험 안전 수칙을 지키며 실험을 준비한다.<br>② 산화·환원을 <span class="k-r">전자의 이동</span>으로 설명한다.<br>③ 산화와 환원이 <span class="k-r">동시에</span> 일어남을 안다.</p>
+      </div>
+      <div>
+        <div class="k-o" style="font-size:21px">🗺 미션 지도</div>
+        <p style="margin:4px 0">Stage 1 안전 실험실 → Stage 2 은빛 변신 → Stage 3 불꽃 속 전자 → Stage 4 전자 분석기 → 학습 점검 → <span class="k-r">미션 성공!</span> (A~F 단계 평가)</p>
+      </div>
+    </div>
+    <div class="idform">
+      <div class="idrow">
+        <label class="k-v">학년</label><input id="gr" type="number" inputmode="numeric" min="1" max="3" placeholder="예 2">
+        <label class="k-v">반</label><input id="cl" type="number" inputmode="numeric" min="1" max="30" placeholder="예 3">
+        <label class="k-v">번호</label><input id="no" type="number" inputmode="numeric" min="1" max="60" placeholder="예 15">
+      </div>
+      <div class="idrow">
+        <label class="k-v" for="nm">이름</label><input id="nm" class="wide" maxlength="12" placeholder="이름을 입력하세요">
+        <button class="btn green" id="startBtn">🚀 미션 시작!</button>
+      </div>
+    </div>
+    <div class="msg" id="msg" style="margin-top:12px">학년·반·번호와 이름을 입력하면 결과 리포트에 표시돼요.</div>
+  </div>`;
+  $('#startBtn').onclick=()=>{
+    const gr=parseInt($('#gr').value,10),cl=parseInt($('#cl').value,10),no=parseInt($('#no').value,10),v=$('#nm').value.trim();
+    const bad=m=>{say($('#panel-intro'),m,'bad');sfx.bad()};
+    if(!(gr>=1&&gr<=3))return bad('<span class="k-r">학년</span>을 1~3 사이의 숫자로 입력해 주세요!');
+    if(!(cl>=1&&cl<=30))return bad('<span class="k-r">반</span>을 1~30 사이의 숫자로 입력해 주세요!');
+    if(!(no>=1&&no<=60))return bad('<span class="k-r">번호</span>를 1~60 사이의 숫자로 입력해 주세요!');
+    if(!v)return bad('<span class="k-r">이름</span>을 입력해 주세요!');
+    S.grade=gr;S.cls=cl;S.num=no;S.name=v;unlock('s1');sfx.ok();go('s1');
+  };
+  $$('#panel-intro input').forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter')$('#startBtn').click()}));
+}
+
+/* =====================================================================
+   Stage 1 : 안전 실험실
+===================================================================== */
+function gameDress(box,done){
+  const rec=newRec(),ORD=['coat','goggles','gloves'],NAMES={coat:'실험복',goggles:'보안경',gloves:'실험용 고무장갑'};
+  let worn=[];
+  const ITEMS=[['goggles','🥽','보안경'],['sandal','🩴','슬리퍼'],['gloves','🧤','실험용 고무장갑'],['phones','🎧','헤드폰'],['coat','🥼','실험복']];
+  box.innerHTML=mission('🦺','안전 요원 미션! 실험 전에 꼭 필요한 복장을 <span class="k-r">올바른 순서</span>로 캐릭터에게 입혀 주세요. 실험에 어울리지 않는 것은 입히면 안 돼요! (옷을 끌어다 캐릭터 위에 놓기)')+`
+  <div class="two">
+   <div class="card avatarbox">
+    <svg viewBox="0 0 260 380" id="avatar">
+     <rect data-drop="avatar" x="20" y="0" width="220" height="372" fill="transparent"/>
+     <rect x="96" y="250" width="30" height="88" rx="12" fill="#4c6ef5"/><rect x="134" y="250" width="30" height="88" rx="12" fill="#4c6ef5"/>
+     <ellipse cx="108" cy="344" rx="26" ry="11" fill="#495057"/><ellipse cx="152" cy="344" rx="26" ry="11" fill="#495057"/>
+     <rect x="60" y="132" width="26" height="96" rx="13" fill="#ffd9b8"/><rect x="174" y="132" width="26" height="96" rx="13" fill="#ffd9b8"/>
+     <rect x="80" y="118" width="100" height="140" rx="24" fill="#ffa8a8"/>
+     <circle cx="130" cy="78" r="42" fill="#ffd9b8"/>
+     <path d="M88 72 q2 -46 42 -48 q42 2 44 48 q-16 -24 -44 -24 q-28 0 -42 24z" fill="#5f3dc4"/>
+     <circle cx="116" cy="84" r="4.5" fill="#2f3b57"/><circle cx="144" cy="84" r="4.5" fill="#2f3b57"/>
+     <path d="M118 100 q12 10 24 0" stroke="#d6336c" stroke-width="3" fill="none" stroke-linecap="round"/>
+     <g class="layer" id="lcoat"><rect x="72" y="112" width="116" height="180" rx="26" fill="#fff" stroke="#adb5bd" stroke-width="3"/><rect x="48" y="126" width="30" height="104" rx="15" fill="#fff" stroke="#adb5bd" stroke-width="3"/><rect x="182" y="126" width="30" height="104" rx="15" fill="#fff" stroke="#adb5bd" stroke-width="3"/><path d="M130 118 L130 290" stroke="#ced4da" stroke-width="3"/><path d="M104 114 L130 160 L156 114" fill="#e9ecef" stroke="#adb5bd" stroke-width="3"/><circle cx="121" cy="200" r="4" fill="#74c0fc"/><circle cx="121" cy="236" r="4" fill="#74c0fc"/><circle cx="121" cy="270" r="4" fill="#74c0fc"/></g>
+     <g class="layer" id="lgog"><path d="M88 80 h84" stroke="#1971c2" stroke-width="6" stroke-linecap="round"/><rect x="94" y="68" width="34" height="26" rx="12" fill="rgba(165,216,255,.55)" stroke="#1971c2" stroke-width="5"/><rect x="132" y="68" width="34" height="26" rx="12" fill="rgba(165,216,255,.55)" stroke="#1971c2" stroke-width="5"/></g>
+     <g class="layer" id="lglv"><ellipse cx="63" cy="240" rx="19" ry="25" fill="#4dabf7" stroke="#1971c2" stroke-width="3"/><ellipse cx="197" cy="240" rx="19" ry="25" fill="#4dabf7" stroke="#1971c2" stroke-width="3"/></g>
+    </svg>
+    <div class="wornlist" id="worn">아직 아무것도 입지 않았어요.</div>
+   </div>
+   <div class="card">
+    <div class="k-o" style="font-size:21px">🧺 옷장 (끌어서 캐릭터 위에 놓기)</div>
+    <div class="wardrobe" id="wardrobe">${ITEMS.map(i=>`<div class="tile" data-id="${i[0]}"><span class="emo">${i[1]}</span><span>${i[2]}</span></div>`).join('')}</div>
+    <div class="msg info" id="msg">실험복, 보안경, 고무장갑은 어떤 순서로 입어야 할까요?</div>
+    <div class="btnrow"><button class="btn small ghost" id="hintBtn">💡 힌트</button><button class="btn green glow" id="nextBtn" style="display:none">▶ 실험 도구 확인하러 가기</button></div>
+   </div>
+  </div>`;
+  const MSG={
+    sandal:'🩴 발등이 드러나는 슬리퍼는 약품이 떨어지면 위험해요. 실험실에서는 발이 가려지는 신발을 신어요.',
+    phones:'🎧 헤드폰을 끼면 주변의 경고 소리를 놓칠 수 있어요. 실험 중에는 사용하지 않아요.',
+    goggles:'보안경보다 <span class="k-r">몸을 감싸는 실험복</span>을 먼저 입어요.',
+    gloves0:'고무장갑은 <span class="k-r">마지막</span>에 껴요! 먼저 실험복부터 입어요.',
+    gloves1:'장갑을 낀 손으로 얼굴 장비를 만지면 약품이 묻을 수 있어요. <span class="k-r">보안경</span>을 먼저 쓰고, 고무장갑은 마지막에!'
+  };
+  $$('.tile',box).forEach(t=>makeDrag(t,{onDrop:(tg)=>{
+    if(!tg||tg.dataset.drop!=='avatar')return;
+    const id=t.dataset.id;
+    if(id==='sandal'||id==='phones'){tag(rec,'wrongItem');say(box,MSG[id],'bad');sfx.bad();return}
+    if(id!==ORD[worn.length]){tag(rec,'order');say(box,id==='goggles'?MSG.goggles:(worn.length===0?MSG.gloves0:MSG.gloves1),'bad');sfx.bad();return}
+    worn.push(id);$('#l'+({coat:'coat',goggles:'gog',gloves:'glv'})[id],box).classList.add('on');t.classList.add('off');sfx.ok();
+    $('#worn',box).innerHTML=worn.map((w,i)=>`${i+1}. <span class="k-g">${NAMES[w]}</span> ✅`).join('<br>');
+    if(worn.length===3){say(box,'🎉 안전 장구 <span class="k-g">3종</span>을 모두 착용했어요! 실험 도구가 활성화됩니다.','ok');$('#nextBtn',box).style.display='';$('#hintBtn',box).style.display='none';sfx.win()}
+    else say(box,`좋아요! <span class="k-g">${NAMES[id]}</span> 착용 완료. 다음은?`,'ok');
+  }}));
+  $('#hintBtn',box).onclick=()=>{rec.hint++;say(box,'💡 순서 힌트 : <span class="k-o">몸 전체</span> → <span class="k-o">눈(얼굴)</span> → <span class="k-o">손</span>(약품이 직접 닿는 마지막 부위)','info')};
+  $('#nextBtn',box).onclick=()=>done(rec);
+}
+function gameEquip(box,done){
+  const T=[
+   ['tape','구리 테이프','구리(Cu) 금속 테이프예요. 이번 실험에서 전자를 내놓는 주인공이 될 거예요.','<svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="30" fill="#e8925a" stroke="#b5651d" stroke-width="3"/><circle cx="40" cy="40" r="12" fill="#fff8e1" stroke="#b5651d" stroke-width="3"/><rect x="40" y="66" width="36" height="8" fill="#e8925a" stroke="#b5651d" stroke-width="2"/></svg>'],
+   ['ag','질산 은 수용액','질산 은(AgNO₃)이 물에 녹아 Ag⁺와 NO₃⁻로 나뉘어 있어요. 피부에 닿으면 검게 착색되니 장갑이 필수!','<svg viewBox="0 0 80 80"><rect x="26" y="6" width="28" height="14" rx="4" fill="#495057"/><path d="M28 20 h24 v8 q14 6 14 20 v20 q0 6 -6 6 h-40 q-6 0 -6 -6 v-20 q0 -14 14 -20z" fill="#e9ecef" stroke="#868e96" stroke-width="3"/><rect x="20" y="44" width="40" height="20" rx="4" fill="#fff" stroke="#adb5bd"/><text x="40" y="59" text-anchor="middle" font-size="12" fill="#1c7ed6">AgNO₃</text></svg>'],
+   ['petri','페트리접시','반응이 일어날 작은 실험 무대예요.','<svg viewBox="0 0 80 80"><ellipse cx="40" cy="50" rx="34" ry="14" fill="#d0ebff" stroke="#74c0fc" stroke-width="3"/><ellipse cx="40" cy="42" rx="34" ry="14" fill="#e7f5ff" stroke="#74c0fc" stroke-width="3"/></svg>'],
+   ['drop','스포이트','용액을 한 방울씩 정확하게 옮길 때 써요.','<svg viewBox="0 0 80 80"><ellipse cx="40" cy="16" rx="12" ry="14" fill="#f03e3e" stroke="#c92a2a" stroke-width="3"/><rect x="33" y="28" width="14" height="8" fill="#495057"/><path d="M33 36 h14 v30 l-7 12 l-7 -12z" fill="#f1f3f5" stroke="#868e96" stroke-width="3"/></svg>'],
+   ['sci','가위','구리 테이프를 원하는 모양으로 자를 때 써요. 손가락을 조심!','<div class="emo">✂️</div>']
+  ];
+  const ck=new Set();
+  box.innerHTML=mission('🧰','실험대에 놓인 <span class="k-r">5가지 도구</span>를 하나씩 눌러 확인해 보세요.')+`<div class="card"><div class="tools">${T.map(t=>`<div class="tool" data-k="${t[0]}">${t[3]}<div>${t[1]}</div></div>`).join('')}</div>
+  <div class="msg info" id="msg">도구를 눌러 설명을 읽어 보세요. (0/5)</div>
+  <div class="btnrow"><button class="btn green glow" id="nextBtn" style="display:none">▶ Stage 2 해금!</button></div></div>`;
+  $$('.tool',box).forEach(el=>el.onclick=()=>{
+    const t=T.find(x=>x[0]===el.dataset.k);ck.add(t[0]);el.classList.add('ck');sfx.pop();
+    say(box,`<span class="k-b">${t[1]}</span> : ${t[2]} (${ck.size}/5)`,'info');
+    if(ck.size===5){say(box,'✅ 도구 확인 완료! <span class="k-g">Stage 2</span>가 해금되었어요.','ok');$('#nextBtn',box).style.display=''}
+  });
+  $('#nextBtn',box).onclick=done;
+}
+
+/* =====================================================================
+   Stage 2 : 페트리접시 속 은빛 변신
+===================================================================== */
+const SHAPES={
+  circle:{n:'동그라미',g:'<circle cx="50" cy="50" r="36"/>',R:36},
+  star:{n:'별',g:'<polygon points="50,8 62,38 94,40 69,60 78,92 50,74 22,92 31,60 6,40 38,38"/>',R:44},
+  heart:{n:'하트',g:'<path d="M50 88 C8 58 4 26 27 18 C40 14 48 22 50 30 C52 22 60 14 73 18 C96 26 92 58 50 88Z"/>',R:42},
+  bar:{n:'띠(직사각형)',g:'<rect x="6" y="34" width="88" height="32" rx="6"/>',R:46}
+};
+function gameCuLab(box,done){
+  let step=1,shape=null,attached=false,fill=0,drops=0,covered=false,need=3,busy=false;
+  const SC=1.2,CX=480,CY=215,R0=24,DR=13;
+  const LB=['가위로 자르기','접시에 붙이기','수용액 떨어뜨리기','반응 관찰'];
+  box.innerHTML=`<div id="stepbar"></div>`+mission('🧪','<span class="k-r">가위</span>로 구리 테이프를 자르고, 페트리접시에 붙인 뒤 <span class="k-b">질산 은 수용액</span>을 구리가 잠길 때까지 떨어뜨리세요.')+`
+  <div class="card">
+   <div class="chips" id="chips"><span class="k-o">① 모양 고르기 :</span>${Object.entries(SHAPES).map(([k,v])=>`<button class="cbtn" data-s="${k}">${v.n}</button>`).join('')}<button class="btn small orange" id="cutBtn">✂️ 가위로 자르기</button></div>
+   <div class="scene" id="scene">
+    <svg viewBox="0 0 720 380" id="cuSvg">
+     <defs>
+      <linearGradient id="cuGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4a261"/><stop offset=".5" stop-color="#e07a2d"/><stop offset="1" stop-color="#c2611b"/></linearGradient>
+      <clipPath id="tapeClip"></clipPath>
+     </defs>
+     <rect width="720" height="380" fill="#f8f9fa"/><rect y="330" width="720" height="50" fill="#f1d9b5"/>
+     <rect x="24" y="100" width="220" height="200" rx="14" fill="#b2f2bb" stroke="#69db7c" stroke-width="3"/>
+     <g stroke="#8ce99a" stroke-width="1.5">${[60,90,120,150].map(x=>`<line x1="${24+x}" y1="100" x2="${24+x}" y2="300"/>`).join('')}${[140,180,220,260].map(y=>`<line x1="24" y1="${y}" x2="244" y2="${y}"/>`).join('')}</g>
+     <text x="134" y="124" text-anchor="middle" font-size="16" fill="#2b8a3e">커팅 매트</text>
+     <rect id="strip" x="44" y="180" width="180" height="46" rx="6" fill="url(#cuGrad)" stroke="#a0561a" stroke-width="2"/>
+     <text id="striptxt" x="134" y="209" text-anchor="middle" font-size="17" fill="#fff">구리 테이프</text>
+     <g id="sci" style="transform:translate(40px,160px);transition:transform .9s linear;opacity:0"><text font-size="46" transform="rotate(90)">✂️</text></g>
+     <g id="dish" data-drop="dish" style="cursor:pointer">
+      <circle cx="${CX}" cy="${CY}" r="114" fill="#f1f8ff" stroke="#a5d8ff" stroke-width="8"/>
+      <circle cx="${CX}" cy="${CY}" r="102" fill="#ffffff" stroke="#d0ebff" stroke-width="3"/>
+      <g id="tapeG"></g>
+      <circle id="liq" cx="${CX}" cy="${CY}" r="0" fill="#74c0fc" fill-opacity=".42" stroke="#4dabf7" stroke-width="2"/>
+      <g id="dots" clip-path="url(#tapeClip)"></g>
+     </g>
+     <text x="${CX}" y="352" text-anchor="middle" font-size="17" fill="#6c7a99">페트리접시 (눌러서 떨어뜨리기)</text>
+     <g id="bottle" style="cursor:pointer" transform="translate(640,318)">
+      <rect x="-32" y="-96" width="64" height="96" rx="12" fill="#e9ecef" stroke="#868e96" stroke-width="3"/>
+      <rect x="-18" y="-116" width="36" height="22" rx="4" fill="#495057"/>
+      <rect x="-26" y="-64" width="52" height="36" rx="5" fill="#fff" stroke="#adb5bd"/>
+      <text x="0" y="-41" text-anchor="middle" font-size="14" fill="#1c7ed6">AgNO₃</text>
+      <text x="0" y="14" text-anchor="middle" font-size="14" fill="#6c7a99">병 (눌러서 담기)</text>
+     </g>
+     <g id="dropper" style="transform:translate(640px,212px);transition:transform .55s ease">
+      <ellipse cx="0" cy="-104" rx="14" ry="20" fill="#f03e3e" stroke="#c92a2a" stroke-width="3"/>
+      <rect x="-10" y="-88" width="20" height="10" fill="#495057"/>
+      <path d="M-9 -78 h18 v62 l-9 16 l-9 -16z" fill="#f1f3f5" stroke="#868e96" stroke-width="3"/>
+      <rect id="dLiq" x="-6" y="-14" width="12" height="0" fill="#74c0fc"/>
+     </g>
+     <circle id="drip" cx="${CX}" cy="112" r="7" fill="#4dabf7" opacity="0"/>
+    </svg>
+    <div class="ov pieceov" id="piece" style="display:none;left:${(134/720*100).toFixed(1)}%;top:${(262/380*100).toFixed(1)}%;transform:translate(-50%,-50%);width:13%;"></div>
+   </div>
+   <div class="msg info" id="msg">① 자를 모양을 고르고 <span class="k-r">✂️ 가위로 자르기</span>를 눌러 보세요.</div>
+   <div class="btnrow"><button class="btn green glow" id="zoomBtn" style="display:none">🔍 미시 세계로 들어가기</button></div>
+  </div>`;
+  const setStep=n=>{step=n;$('#stepbar',box).innerHTML=stepBar(LB,n)};setStep(1);
+  const svg=$('#cuSvg',box),chips=$$('.cbtn',box);
+  const shapeSvg=(k,sz)=>`<svg viewBox="0 0 100 100" width="100%" style="display:block"><g fill="url(#cuGrad)" stroke="#a0561a" stroke-width="3">${SHAPES[k].g}</g></svg>`;
+  chips.forEach(b=>b.onclick=()=>{if(step!==1||busy)return;shape=b.dataset.s;chips.forEach(c=>c.classList.toggle('on',c===b));sfx.pop();say(box,`<span class="k-o">${SHAPES[shape].n}</span> 모양을 골랐어요. 이제 가위로 잘라 볼까요?`,'info')});
+  $('#cutBtn',box).onclick=async()=>{
+    if(step!==1||busy)return;
+    if(!shape){say(box,'먼저 자를 <span class="k-o">모양</span>을 골라 주세요!','bad');sfx.bad();return}
+    busy=true;const sci=$('#sci',box);sci.style.opacity=1;sci.style.transition='none';sci.style.transform='translate(40px,150px)';void sci.getBoundingClientRect();
+    sci.style.transition='transform .9s linear';sci.style.transform='translate(210px,150px)';
+    for(let i=0;i<5;i++){sfx.snip();await sleep(170)}
+    sci.style.opacity=0;$('#strip',box).setAttribute('width',110);
+    const pc=$('#piece',box);pc.innerHTML=shapeSvg(shape);pc.style.display='';
+    makeDrag(pc,{ghost:()=>{const d=document.createElement('div');d.style.width='90px';d.innerHTML=shapeSvg(shape);return d},onDrop:(t)=>{
+      if(!t||t.dataset.drop!=='dish'||step!==2){if(step===2)say(box,'잘라낸 구리 조각을 <span class="k-r">페트리접시</span> 위로 끌어다 놓아요.','bad');return}
+      attach();
+    },enabled:()=>step===2});
+    setStep(2);busy=false;say(box,'잘 잘랐어요! ② 구리 조각을 끌어서 <span class="k-r">페트리접시</span>에 붙여 주세요.','ok');sfx.ok();
+    chips.forEach(c=>c.disabled=true);$('#cutBtn',box).disabled=true;
+  };
+  function attach(){
+    attached=true;$('#piece',box).style.display='none';sfx.ok();
+    const rot=Math.round((Math.random()*30)-15),tf=`translate(${CX},${CY}) rotate(${rot}) scale(${SC}) translate(-50,-50)`;
+    $('#tapeG',box).innerHTML=`<g transform="${tf}"><g fill="url(#cuGrad)" stroke="#a0561a" stroke-width="2.5">${SHAPES[shape].g}</g></g>`;
+    $('#tapeClip',box).innerHTML=SHAPES[shape].g.replace(/^<(\w+)/,`<$1 transform="${tf}"`);
+    need=clamp(Math.ceil((SHAPES[shape].R*SC+10-R0)/DR),2,6);
+    setStep(3);say(box,'③ <span class="k-b">병</span>을 눌러 스포이트에 용액을 담고, <span class="k-b">페트리접시</span>를 눌러 한 방울씩 떨어뜨리세요. 구리가 잠길 때까지!','info');
+  }
+  const dropper=$('#dropper',box);
+  $('#bottle',box).onclick=async()=>{
+    if(step!==3||busy||covered)return;
+    if(fill>0){say(box,'스포이트에 이미 용액이 들어 있어요. <span class="k-b">페트리접시</span>를 눌러 떨어뜨려요.','info');return}
+    busy=true;dropper.style.transform='translate(640px,212px)';await sleep(500);sfx.pop();
+    $('#dLiq',box).setAttribute('y',-64);$('#dLiq',box).setAttribute('height',52);await sleep(350);
+    dropper.style.transform=`translate(${CX}px,112px)`;await sleep(560);fill=2;busy=false;
+    say(box,'스포이트에 용액이 담겼어요! 이제 <span class="k-b">페트리접시</span>를 눌러 떨어뜨려요.','ok');
+  };
+  $('#dish',box).addEventListener('click',async()=>{
+    if(busy||covered)return;
+    if(step<3){if(step===2)say(box,'먼저 구리 조각을 접시에 붙여야 해요.','bad');return}
+    if(fill<=0){say(box,'스포이트가 비었어요. <span class="k-b">병</span>을 눌러 다시 담아 주세요.','bad');sfx.bad();return}
+    busy=true;fill--;const dr=$('#drip',box);dr.setAttribute('opacity',1);
+    dr.animate([{transform:'translateY(0)'},{transform:'translateY(96px)'}],{duration:420,easing:'ease-in'});sfx.drop();await sleep(420);dr.setAttribute('opacity',0);
+    if(fill===0){$('#dLiq',box).setAttribute('height',0)}else{$('#dLiq',box).setAttribute('height',24);$('#dLiq',box).setAttribute('y',-38)}
+    drops++;const r=Math.min(R0+DR*drops,100);tween(parseFloat($('#liq',box).getAttribute('r'))||0,r,500,v=>$('#liq',box).setAttribute('r',v));await sleep(520);busy=false;
+    if(drops>=need){covered=true;dropper.style.transform='translate(640px,212px)';react()}
+    else say(box,`방울 ${drops}개! 구리 테이프가 <span class="k-r">아직 덜 잠겼어요</span>. 조금 더!`,'info');
+  });
+  async function react(){
+    setStep(4);say(box,'💧 구리 테이프가 <span class="k-b">완전히 잠겼어요!</span> 반응이 시작돼요… 표면을 잘 관찰해 보세요.','ok');
+    const dots=$('#dots',box);let n=0;
+    const t=setInterval(()=>{
+      for(let i=0;i<6;i++){const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',CX+(Math.random()*160-80));c.setAttribute('cy',CY+(Math.random()*160-80));c.setAttribute('r',(1.6+Math.random()*3).toFixed(1));c.setAttribute('fill','#f1f3f5');c.setAttribute('stroke','#adb5bd');c.setAttribute('stroke-width','.8');dots.appendChild(c)}
+      $('#liq',box).setAttribute('fill','#8ec5ff');sfx.pop();
+      if(++n>=9){clearInterval(t);say(box,'✨ 구리 테이프 표면에 <span class="k-v">은빛 물질</span>이 생기고, 수용액은 점점 <span class="k-b">푸른빛</span>을 띠어요! 눈에 보이지 않는 세계에서는 어떤 일이 일어났을까요?','ok');$('#zoomBtn',box).style.display='';sfx.ok()}
+    },260);
+  }
+  $('#zoomBtn',box).onclick=async()=>{
+    const sc=$('#scene',box);sc.style.transformOrigin='67% 56%';sc.querySelectorAll('svg,.ov').forEach(e=>e.style.transformOrigin='67% 56%');
+    sc.classList.add('zoom');sfx.zap();await sleep(1000);done();
+  };
+}
+
+function gameCuMicro(box,rec,next){
+  let cuLost=0,agGot=[false,false],finished=false;
+  const lat=[];[40,100,160].forEach(x=>[50,120,190,260,330,400].forEach(y=>lat.push(`<g transform="translate(${x},${y})"><circle r="24" fill="#f9c99a" stroke="#d9822b" stroke-width="2.5"/><text text-anchor="middle" y="6" font-size="17" fill="#8a4b12">Cu</text></g>`)));
+  const no3=[[400,225,'fl1'],[620,190,'fl2'],[610,340,'fl1'],[385,350,'fl2'],[560,60,'fl1']].map(a=>`<g data-drop="no3" style="transform:translate(${a[0]}px,${a[1]}px)"><g class="${a[2]}"><circle r="19" fill="#e5dbff" stroke="#9775fa" stroke-width="2.5"/><text text-anchor="middle" y="5" font-size="13" fill="#5f3dc4">NO₃⁻</text></g></g>`).join('');
+  const agPos=[[470,110],[520,320]];
+  const ags=agPos.map((p,i)=>`<g class="ag mv" data-drop="ag" data-i="${i}" style="transform:translate(${p[0]}px,${p[1]}px)"><circle r="36" fill="transparent"/><circle class="agc" r="28" fill="#ced4da" stroke="#868e96" stroke-width="3"/><text class="agt" text-anchor="middle" y="6" font-size="19" fill="#343a40">Ag⁺</text><text class="chg" text-anchor="middle" y="50" font-size="16" fill="#d6336c">전하 +1</text></g>`).join('');
+  box.innerHTML=stepBar(['입자 조작','산화·환원 판단'],1)+mission('🔬','<span class="k-b">미시 세계</span>로 들어왔어요! 구리 원자(Cu)의 <span class="k-o">전자(e⁻) 2개</span>를 끌어다 수용액 속 <span class="k-r">은 이온(Ag⁺)</span>에게 전달해 주세요.')+`
+  <div class="card micro">
+   <svg viewBox="0 0 720 430" id="mSvg">
+    <rect x="0" y="0" width="250" height="430" fill="#fff1e0"/><rect x="250" y="0" width="470" height="430" fill="#e7f5ff"/>
+    <line x1="250" y1="0" x2="250" y2="430" stroke="#74c0fc" stroke-width="3" stroke-dasharray="8 6"/>
+    <text x="14" y="22" font-size="17" fill="#c2611b">구리 테이프 (Cu 금속)</text><text x="270" y="22" font-size="17" fill="#1c7ed6">질산 은 수용액</text>
+    ${lat.join('')}
+    <circle id="gap" cx="232" cy="215" r="34" fill="none" stroke="#c2611b" stroke-width="2" stroke-dasharray="5 4" opacity="0" class="fade"/>
+    ${no3}${ags}
+    <g id="cuAtom" class="mv" style="transform:translate(232px,215px)"><circle id="cuC" r="34" fill="#f4a261" stroke="#c96a1b" stroke-width="3"/><text id="cuT" text-anchor="middle" y="7" font-size="22" fill="#7a3d0b">Cu</text><text id="cuChg" text-anchor="middle" y="58" font-size="16" fill="#d6336c">전하 0</text></g>
+    <g class="el" data-i="0" style="transform:translate(262px,190px)"><g class="wob"><circle r="26" fill="transparent"/><circle r="13" fill="#ffd43b" stroke="#f08c00" stroke-width="3"/><text text-anchor="middle" y="5" font-size="13" fill="#7a4300">e⁻</text></g></g>
+    <g class="el" data-i="1" style="transform:translate(262px,240px)"><g class="wob" style="animation-delay:.4s"><circle r="26" fill="transparent"/><circle r="13" fill="#ffd43b" stroke="#f08c00" stroke-width="3"/><text text-anchor="middle" y="5" font-size="13" fill="#7a4300">e⁻</text></g></g>
+   </svg>
+   <div class="infoRow"><span id="iCu">구리(Cu) 전하 : <span class="k-o">0</span></span><span id="iAg">은 이온(Ag⁺) 전하 : <span class="k-r">+1, +1</span></span></div>
+   <div class="msg info" id="msg">노란 공(전자)을 끌어서 <span class="k-r">Ag⁺</span> 위에 놓아 보세요.</div>
+   <div class="eqbox" id="eqbox" style="display:none"></div>
+   <div class="btnrow"><button class="btn small ghost" id="hintBtn">💡 힌트</button><button class="btn green glow" id="nextBtn" style="display:none">다음 : 산화·환원 판단하기 ▶</button></div>
+  </div>`;
+  const agG=$$('.ag',box),els=$$('.el',box);
+  const updCu=()=>{$('#cuChg',box).textContent='전하 +'+cuLost;$('#iCu',box).innerHTML=`구리(Cu) 전하 : <span class="k-o">${cuLost?'+'+cuLost:'0'}</span>`;$('#iAg',box).innerHTML=`은 이온(Ag⁺) 전하 : <span class="k-r">${agGot.map(g=>g?'0':'+1').join(', ')}</span>`};
+  els.forEach(e=>makeDrag(e,{ghost:eghost,enabled:()=>!finished,onDrop:(t,info)=>{
+    if(!t){if(info.moved>50){tag(rec,'miss',.5);say(box,'전자를 <span class="k-r">이온 위</span>에 정확히 놓아야 해요.','bad');sfx.bad()}return}
+    const d=t.dataset.drop;
+    if(d==='no3'){tag(rec,'wrongTarget');say(box,'질산 이온(NO₃⁻)은 반응에 참여하지 않는 <span class="k-v">구경꾼 이온</span>이에요. 전자를 받을 (+)전하 입자는 누굴까요?','bad');sfx.bad();return}
+    if(d==='ag'){
+      const i=+t.dataset.i;
+      if(agGot[i]){tag(rec,'dup');say(box,'이 은 이온은 이미 전자를 받아 <span class="k-g">Ag 원자</span>가 됐어요. 아직 (+)인 다른 Ag⁺에게!','bad');sfx.bad();return}
+      agGot[i]=true;e.classList.add('used');cuLost++;sfx.zap();
+      const g=agG[i];g.querySelector('.agc').setAttribute('fill','#f1f3f5');g.querySelector('.agc').setAttribute('stroke','#adb5bd');g.querySelector('.agt').textContent='Ag';g.querySelector('.chg').textContent='전하 0';g.querySelector('.chg').setAttribute('fill','#2b9a44');
+      updCu();
+      if(cuLost<2)say(box,'⚡ 전자 1개 이동! Ag⁺ → <span class="k-g">Ag</span> (은 원자). 남은 전자도 옮겨 주세요.','ok');
+      else finish();
+    }else{tag(rec,'miss',.5);say(box,'전자를 <span class="k-r">이온 위</span>에 놓아야 해요.','bad')}
+  }}));
+  async function finish(){
+    finished=true;say(box,'⚡ 전자 2개가 모두 이동했어요! 무슨 변화가 일어나는지 볼까요?','ok');sfx.ok();await sleep(700);
+    $('#gap',box).setAttribute('opacity',1);
+    const cu=$('#cuAtom',box);$('#cuC',box).setAttribute('fill','#a5d8ff');$('#cuC',box).setAttribute('stroke','#4dabf7');$('#cuC',box).setAttribute('r',26);$('#cuT',box).textContent='Cu²⁺';$('#cuT',box).setAttribute('fill','#1864ab');$('#cuT',box).setAttribute('font-size',18);
+    $('#cuChg',box).textContent='전하 +2';$('#cuChg',box).setAttribute('y',46);
+    cu.style.transform='translate(350px,215px)';
+    agG[0].style.transform='translate(285px,120px)';agG[1].style.transform='translate(285px,310px)';
+    await sleep(1400);
+    const eq=$('#eqbox',box);eq.style.display='';eq.innerHTML='<div class="mute" style="font-size:17px">완성된 화학 반응식 (계수 포함)</div><span class="k-o">Cu</span> + 2<span class="k-r">AgNO₃</span> → <span class="k-b">Cu(NO₃)₂</span> + 2<span class="k-v">Ag</span><br><span style="font-size:20px">이온 반응식 : <span class="k-o">Cu</span> + 2<span class="k-r">Ag⁺</span> → <span class="k-b">Cu²⁺</span> + 2<span class="k-v">Ag</span></span><div style="font-size:17px;margin-top:4px">구리는 녹아 <span class="k-b">Cu²⁺</span>가 되어 나오고(수용액이 푸른빛), 은 이온은 <span class="k-v">은(Ag)</span>이 되어 구리 표면에 석출돼요. 구리가 잃은 전자 2개 = 은 이온 2개가 얻은 전자 2개!</div>';
+    say(box,'✅ 전자를 잃은 구리는 <span class="k-b">Cu²⁺</span>가 되어 녹아 나오고, 전자를 얻은 은 이온은 <span class="k-v">Ag</span>로 변해 표면에 석출됐어요.','ok');
+    $('#nextBtn',box).style.display='';$('#hintBtn',box).style.display='none';sfx.win();
+  }
+  $('#hintBtn',box).onclick=()=>{rec.hint++;say(box,'💡 전자는 <span class="k-o">(−)전하</span>를 띠어서 <span class="k-r">(+)전하</span>의 입자 쪽으로 가요. Ag⁺ 이온 하나당 전자 1개가 필요해요. 파란 보라색 NO₃⁻는 구경꾼!','info')};
+  $('#nextBtn',box).onclick=next;
+}
+
+function gameCuJudge(box,rec,done){
+  const BL=[
+   {k:'cuDir',a:'잃어',o:['잃어','얻어'],fb:'구리 원자는 전자 2개를 내놓고 Cu²⁺가 됐어요(전하 0 → +2). 전자를 <span class="k-r">잃는</span> 쪽이에요.'},
+   {k:'cuOx',a:'산화',o:['산화','환원'],fb:'전자를 <span class="k-r">잃는</span> 변화가 <span class="k-r">산화</span>예요. (전자를 얻는 변화는 환원)'},
+   {k:'agDir',a:'얻어',o:['잃어','얻어'],fb:'Ag⁺는 전자를 1개씩 받아 Ag가 됐어요(전하 +1 → 0). 전자를 <span class="k-r">얻는</span> 쪽이에요.'},
+   {k:'agRed',a:'환원',o:['산화','환원'],fb:'전자를 <span class="k-r">얻는</span> 변화가 <span class="k-r">환원</span>이에요.'},
+   {k:'simul',a:'동시에',o:['동시에','따로따로'],fb:'전자는 주는 쪽과 받는 쪽이 있어야 이동해요. 그래서 산화와 환원은 <span class="k-r">함께(동시에)</span> 일어나요.'}
+  ];
+  const sel={};let ok=false;
+  const chip=(b)=>`<span class="opt2" data-k="${b.k}">${b.o.map(o=>`<button class="o2" data-v="${o}">${o}</button>`).join('')}</span>`;
+  box.innerHTML=stepBar(['입자 조작','산화·환원 판단'],2)+mission('🧠','방금 본 전자의 이동을 문장으로 정리해요. <span class="k-r">빈칸</span>을 눌러 알맞은 말을 골라 주세요.')+`
+  <div class="card">
+   <div class="sent">① 구리(<span class="k-o">Cu</span>)는 전자를 ${chip(BL[0])} ${chip(BL[1])}된다.</div>
+   <div class="sent">② 은 이온(<span class="k-r">Ag⁺</span>)은 전자를 ${chip(BL[2])} ${chip(BL[3])}된다.</div>
+   <div class="sent">③ 이 반응에서 산화와 환원은 ${chip(BL[4])} 일어난다.</div>
+   <div class="msg info" id="msg">모든 빈칸을 고른 뒤 <span class="k-r">확인</span>을 눌러 주세요.</div>
+   <div class="btnrow"><button class="btn orange" id="chkBtn">✔ 확인</button><button class="btn green glow" id="nextBtn" style="display:none">🔥 Stage 3 해금!</button></div>
+  </div>`;
+  $$('.opt2',box).forEach(g=>$$('.o2',g).forEach(b=>b.onclick=()=>{if(ok)return;sel[g.dataset.k]=b.dataset.v;$$('.o2',g).forEach(x=>{x.classList.toggle('sel',x===b);x.classList.remove('wrong')});sfx.pop()}));
+  $('#chkBtn',box).onclick=()=>{
+    if(ok)return;
+    if(BL.some(b=>!sel[b.k])){say(box,'아직 고르지 않은 빈칸이 있어요!','bad');sfx.bad();return}
+    const wrongs=BL.filter(b=>sel[b.k]!==b.a);
+    if(!wrongs.length){
+      ok=true;$$('.o2.sel',box).forEach(x=>x.classList.add('right'));sfx.win();
+      say(box,'🎉 정답! <span class="k-o">구리는 전자를 잃어 산화</span>되고, <span class="k-r">은 이온은 전자를 얻어 환원</span>돼요. 산화와 환원은 전자의 이동으로 <span class="k-v">동시에</span> 일어납니다.<br>🔥 <span class="k-g">알코올램프와 마그네슘 리본이 활성화</span>되었어요!','ok');
+      $('#chkBtn',box).style.display='none';$('#nextBtn',box).style.display='';return;
+    }
+    wrongs.forEach(w=>{tag(rec,w.k,.5);const g=$(`.opt2[data-k="${w.k}"]`,box);$$('.o2.sel',g).forEach(x=>{x.classList.remove('sel');x.classList.add('wrong')});delete sel[w.k]});
+    say(box,'다시 생각해 봐요!<br>'+wrongs.map(w=>'• '+w.fb).join('<br>'),'bad');sfx.bad();
+  };
+  $('#nextBtn',box).onclick=done;
+}
+
+/* =====================================================================
+   Stage 3 : 불꽃 속의 전자 이동
+===================================================================== */
+function gameMgLab(box,done){
+  let lit=false,burned=false,busy=false;
+  const P=(x,y)=>`left:${(x/720*100).toFixed(2)}%;top:${(y/380*100).toFixed(2)}%`;
+  box.innerHTML=`<div id="stepbar"></div>`+mission('🔥','<span class="k-r">알코올램프에 불을 붙인 뒤</span>, 집게로 집은 <span class="k-b">마그네슘 리본</span>을 불꽃 속으로 끌어다 넣어 연소시키세요.')+`
+  <div class="card">
+   <div class="scene" id="scene">
+    <svg viewBox="0 0 720 380" id="mgSvg">
+     <rect width="720" height="380" fill="#f8f9fa"/><rect y="330" width="720" height="50" fill="#f1d9b5"/>
+     <ellipse cx="290" cy="326" rx="70" ry="10" fill="#dee2e6"/><ellipse cx="290" cy="322" rx="62" ry="7" fill="#f8f9fa" stroke="#ced4da"/>
+     <g id="ash" style="opacity:0;transition:opacity 1s"><path d="M262 322 q10 -22 28 -22 q20 0 30 22z" fill="#ffffff" stroke="#ced4da" stroke-width="2"/></g>
+     <text x="290" y="358" text-anchor="middle" font-size="16" fill="#6c7a99">받침 접시</text>
+     <g id="lamp" style="cursor:pointer" transform="translate(500,330)">
+      <path d="M-62 0 C-70 -50 -40 -78 -30 -80 L30 -80 C40 -78 70 -50 62 0 Z" fill="#e7f5ff" stroke="#74c0fc" stroke-width="4"/>
+      <path d="M-56 0 C-60 -28 -46 -44 -40 -46 L40 -46 C46 -44 60 -28 56 0Z" fill="#c5f6fa"/>
+      <rect x="-14" y="-102" width="28" height="24" rx="4" fill="#ced4da" stroke="#868e96" stroke-width="3"/><rect x="-3" y="-120" width="6" height="20" fill="#adb5bd"/>
+      <text x="0" y="24" text-anchor="middle" font-size="16" fill="#6c7a99">알코올램프</text>
+      <g id="flame" style="opacity:0;transition:opacity .4s"><g class="flame"><path d="M0 -196 C-28 -160 -28 -128 0 -120 C28 -128 28 -160 0 -196Z" fill="#ffd43b"/><path d="M0 -168 C-13 -150 -13 -132 0 -120 C13 -132 13 -150 0 -168Z" fill="#ff922b"/></g></g>
+     </g>
+     <ellipse id="flameTarget" cx="500" cy="172" rx="58" ry="66" fill="none" stroke="#e8590c" stroke-width="3.5" stroke-dasharray="8 6" style="opacity:0;transition:opacity .4s"/>
+     <text id="flameTargetTxt" x="500" y="96" text-anchor="middle" font-size="16" fill="#e8590c" style="opacity:0;transition:opacity .4s">여기에 리본 끝을 놓으세요</text>
+     <circle id="glow" cx="500" cy="170" r="0" fill="#fff" opacity="0"/>
+    </svg>
+    <div class="ov tongs" id="tongs" style="${P(20,90)};width:32%">
+     <svg viewBox="0 0 230 70" style="display:block"><path d="M4 22 L150 34" stroke="#495057" stroke-width="7" stroke-linecap="round"/><path d="M4 40 L150 38" stroke="#495057" stroke-width="7" stroke-linecap="round"/><path d="M150 32 q18 2 28 2" stroke="#495057" stroke-width="6" fill="none"/><path d="M176 30 q30 -8 46 4 q-14 8 -46 4" fill="#e9ecef" stroke="#868e96" stroke-width="2.5"/><path d="M176 34 q10 -6 20 0 t20 0 t10 2" stroke="#adb5bd" stroke-width="3" fill="none"/><text x="4" y="66" font-size="14" fill="#6c7a99">도가니 집게 + 마그네슘 리본</text></svg>
+    </div>
+    <div class="ov" id="flamezone" data-drop="flame" style="${P(430,100)};width:${(140/720*100).toFixed(2)}%;height:${(150/380*100).toFixed(2)}%"></div>
+    <div class="flash" id="flash"></div>
+   </div>
+   <div class="btnrow"><button class="btn orange" id="lightBtn">🔥 알코올램프 점화하기</button></div>
+   <div class="msg info" id="msg">① 먼저 <span class="k-r">알코올램프에 불</span>을 붙여 주세요.</div>
+   <div class="btnrow"><button class="btn green glow" id="zoomBtn" style="display:none">🔍 미시 세계로 들어가기</button></div>
+  </div>`;
+  const setStep=n=>$('#stepbar',box).innerHTML=stepBar(['점화하기','마그네슘 연소','관찰'],n);setStep(1);
+  const light=()=>{if(lit)return;lit=true;$('#flame',box).style.opacity=1;$('#flameTarget',box).style.opacity=1;$('#flameTargetTxt',box).style.opacity=1;sfx.zap();$('#lightBtn',box).disabled=true;setStep(2);say(box,'🔥 불이 붙었어요! ② <span class="k-b">마그네슘 리본</span>(집게)을 끌어서 <span class="k-r">리본 끝(집게 오른쪽 끝)</span>이 <span class="k-r">불꽃의 점선 원</span> 안에 오도록 놓아 보세요.','ok')};
+  $('#lightBtn',box).onclick=light;$('#lamp',box).addEventListener('click',light);
+  const tg=$('#tongs',box);
+  makeDrag(tg,{enabled:()=>!burned,
+    ghost:node=>{const g=node.cloneNode(true);g.removeAttribute('id');g.style.width=node.getBoundingClientRect().width+'px';g.style.transformOrigin='96% 49%';g.style.transform='translate(-96%,-49%) scale(1.04)';return g},
+    onDrop:async(t,info)=>{
+    const fz=$('#flamezone',box).getBoundingClientRect(),pad=26;
+    const inZone=!!info&&info.x>=fz.left-pad&&info.x<=fz.right+pad&&info.y>=fz.top-pad&&info.y<=fz.bottom+pad;
+    if(!inZone&&!(t&&t.dataset.drop==='flame')){if(info&&info.moved<8)return;say(box,lit?'집게 오른쪽 끝의 <span class="k-b">마그네슘 리본</span>이 <span class="k-r">불꽃의 점선 원</span> 안에 들어가도록 놓아 주세요!':'먼저 알코올램프에 <span class="k-r">불을 붙여야</span> 해요.','bad');sfx.bad();return}
+    if(!lit){say(box,'아직 불이 붙지 않았어요. 먼저 <span class="k-r">점화</span>해 주세요!','bad');sfx.bad();return}
+    burned=true;tg.style.display='none';$('#flameTarget',box).style.opacity=0;$('#flameTargetTxt',box).style.opacity=0;setStep(3);
+    const gl=$('#glow',box);gl.setAttribute('opacity',1);tween(10,120,900,v=>{gl.setAttribute('r',v);gl.setAttribute('opacity',Math.max(0,1-(v-10)/110))});
+    $('#flash',box).classList.add('on');sfx.zap();await sleep(500);sfx.zap();
+    $('#ash',box).style.opacity=1;
+    say(box,'💥 눈부신 <span class="k-b">흰 빛</span>을 내며 타고, <span class="k-v">흰색 가루(산화 마그네슘)</span>가 남았어요!<br>📌 화학 반응식 : <span class="k-o">2Mg</span> + <span class="k-r">O₂</span> → <span class="k-g">2MgO</span><br>⚠ <span class="k-r">안전 주의</span> : 마그네슘이 탈 때의 강한 빛은 직접 오래 쳐다보지 않아요.','ok');
+    $('#zoomBtn',box).style.display='';
+  }});
+  $('#zoomBtn',box).onclick=async()=>{
+    const sc=$('#scene',box);sc.querySelectorAll('svg,.ov').forEach(e=>e.style.transformOrigin='70% 45%');sc.classList.add('zoom');sfx.zap();await sleep(1000);done();
+  };
+}
+
+function gameMgMicro(box,rec,next){
+  let moved=0,finished=false;
+  const ringE=(r,n,a0,cls)=>Array.from({length:n},(_,i)=>{const a=(a0+360/n*i)*Math.PI/180;return `<circle cx="${(r*Math.cos(a)).toFixed(1)}" cy="${(r*Math.sin(a)).toFixed(1)}" r="7" fill="#91a7ff" stroke="#4c6ef5" stroke-width="1.5" class="${cls||''}"/>`}).join('');
+  const oE=[-110,-60,-10,40,90,130].map(d=>{const a=d*Math.PI/180;return `<circle cx="${(72*Math.cos(a)).toFixed(1)}" cy="${(72*Math.sin(a)).toFixed(1)}" r="7" fill="#91a7ff" stroke="#4c6ef5" stroke-width="1.5"/>`}).join('');
+  const sl=[155,205].map(d=>{const a=d*Math.PI/180;return [72*Math.cos(a),72*Math.sin(a)]});
+  const mgOut=[-25,25].map(d=>{const a=d*Math.PI/180;return [102*Math.cos(a),102*Math.sin(a)]});
+  box.innerHTML=stepBar(['마그네슘 전자 이동','반응식 확인'],1)+mission('🔬','마그네슘 원자(Mg)의 <span class="k-o">가장 바깥 전자 2개</span>를 끌어다 산소 원자(O)의 <span class="k-r">빈자리(점선 ○)</span>로 옮겨 주세요.')+`
+  <div class="card micro">
+   <svg viewBox="0 0 720 430" id="gSvg">
+    <rect width="720" height="430" fill="#f8f9ff"/>
+    <g id="mgG" class="mv" style="transform:translate(190px,215px)">
+      <circle r="42" fill="none" stroke="#bac8ff"/><circle r="72" fill="none" stroke="#bac8ff"/><g id="ring3"><circle r="102" fill="none" stroke="#ffd8a8" stroke-width="2"/></g>
+      <circle r="26" fill="#f4a261" stroke="#c96a1b" stroke-width="3"/><text id="mgT" text-anchor="middle" y="7" font-size="20" fill="#7a3d0b">Mg</text>
+      ${ringE(42,2,90)}${ringE(72,8,22.5)}
+      <text id="mgL" text-anchor="middle" y="140" font-size="17" fill="#c2611b">Mg 원자 (전자 2·8·2)</text>
+      <text id="mgChg" text-anchor="middle" y="164" font-size="17" fill="#d6336c">전하 0</text>
+    </g>
+    <g id="oG" class="mv" style="transform:translate(530px,215px)">
+      <circle r="95" fill="transparent" data-drop="O"/>
+      <circle r="42" fill="none" stroke="#bac8ff"/><circle r="72" fill="none" stroke="#bac8ff"/>
+      <circle r="26" fill="#ff8787" stroke="#e03131" stroke-width="3"/><text id="oT" text-anchor="middle" y="7" font-size="20" fill="#7d0f0f">O</text>
+      ${ringE(42,2,90)}${oE}
+      ${sl.map((p,i)=>`<g class="slotg" data-s="${i}" data-drop="O"><circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="15" fill="#fff0f6" stroke="#e64980" stroke-width="2.5" stroke-dasharray="4 3"/></g>`).join('')}
+      <g id="oFill"></g>
+      <text id="oL" text-anchor="middle" y="140" font-size="17" fill="#c2611b">O 원자 (전자 2·6)</text>
+      <text id="oChg" text-anchor="middle" y="164" font-size="17" fill="#d6336c">전하 0</text>
+    </g>
+    ${mgOut.map((p,i)=>`<g class="el" data-i="${i}" style="transform:translate(${190+p[0]}px,${215+p[1]}px)"><g class="wob" style="animation-delay:${i*.4}s"><circle r="24" fill="transparent"/><circle r="12" fill="#ffd43b" stroke="#f08c00" stroke-width="3"/><text text-anchor="middle" y="5" font-size="12" fill="#7a4300">e⁻</text></g></g>`).join('')}
+    <g id="bondTxt" style="opacity:0;transition:opacity .8s"><text x="360" y="60" text-anchor="middle" font-size="21" fill="#7048e8">⚡ 정전기적 인력 → 이온 결합!</text><text x="360" y="92" text-anchor="middle" font-size="24" fill="#2b9a44">산화 마그네슘 (MgO) 생성</text></g>
+   </svg>
+   <div class="infoRow"><span id="iMg">Mg 전하 : <span class="k-o">0</span></span><span id="iO">O 전하 : <span class="k-r">0</span></span></div>
+   <div class="msg info" id="msg">노란 전자를 끌어서 산소의 <span class="k-r">빈자리</span>에 놓아 보세요.</div>
+   <div class="eqbox" id="eqbox" style="display:none"></div>
+   <div class="btnrow"><button class="btn small ghost" id="hintBtn">💡 힌트</button><button class="btn green glow" id="nextBtn" style="display:none">다음 : 완성된 반응식 확인하기 ▶</button></div>
+  </div>`;
+  const els=$$('.el',box);
+  els.forEach(e=>makeDrag(e,{ghost:eghost,enabled:()=>!finished,onDrop:(t,info)=>{
+    if(!t||t.dataset.drop!=='O'){if(info.moved>50){tag(rec,'miss',.5);say(box,'전자는 <span class="k-r">산소 원자의 빈자리</span>로 가야 해요!','bad');sfx.bad()}return}
+    const p=sl[moved];e.classList.add('used');moved++;sfx.zap();
+    $('#oFill',box).insertAdjacentHTML('beforeend',`<g><circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="9" fill="#ffd43b" stroke="#f08c00" stroke-width="2.5"/></g>`);
+    $$('.slotg',box)[moved-1].style.opacity=.25;
+    $('#mgChg',box).textContent='전하 +'+moved;$('#oChg',box).textContent='전하 −'+moved;
+    $('#iMg',box).innerHTML=`Mg 전하 : <span class="k-o">+${moved}</span>`;$('#iO',box).innerHTML=`O 전하 : <span class="k-r">−${moved}</span>`;
+    if(moved<2)say(box,'⚡ 전자 1개 이동! 산소의 빈자리가 하나 더 남았어요.','ok');else finish();
+  }}));
+  async function finish(){
+    finished=true;sfx.ok();say(box,'⚡ 전자 2개 이동 완료! Mg와 O에 어떤 변화가 생길까요?','ok');await sleep(700);
+    $('#ring3',box).style.opacity=0;$('#ring3',box).style.transition='opacity .8s';
+    $('#mgT',box).textContent='Mg²⁺';$('#mgT',box).setAttribute('font-size',15);$('#mgL',box).textContent='Mg²⁺ (전자 2·8)';$('#mgL',box).setAttribute('fill','#1c7ed6');
+    $('#oT',box).textContent='O²⁻';$('#oT',box).setAttribute('font-size',15);$('#oL',box).textContent='O²⁻ (전자 2·8)';$('#oL',box).setAttribute('fill','#d6336c');
+    await sleep(900);
+    $('#mgG',box).style.transform='translate(300px,215px)';$('#oG',box).style.transform='translate(440px,215px)';sfx.pop();
+    await sleep(1400);$('#bondTxt',box).style.opacity=1;sfx.win();
+    const eq=$('#eqbox',box);eq.style.display='';
+    eq.innerHTML='<span class="k-o">Mg</span> → <span class="k-b">Mg²⁺</span> + 2e⁻ <span class="mute" style="font-size:17px">(전자를 잃음)</span><br><span class="k-r">O</span> + 2e⁻ → <span class="k-r">O²⁻</span> <span class="mute" style="font-size:17px">(전자를 얻음)</span><hr style="border:1px dashed #b197fc"><div class="mute" style="font-size:17px">완성된 화학 반응식 (계수 포함)</div><span class="k-o">2Mg</span> + <span class="k-r">O₂</span> → <span class="k-g">2MgO</span><div class="mute" style="font-size:16px">※ 위 장면은 Mg 1개와 O 1개의 이동이에요. 실제 반응식은 이 장면이 2번 일어난 것과 같아요.</div>';
+    say(box,'✅ 마그네슘은 전자 2개를 잃어 <span class="k-b">Mg²⁺</span>, 산소는 전자 2개를 얻어 <span class="k-r">O²⁻</span>가 되고, 서로 끌어당겨 <span class="k-g">산화 마그네슘(MgO)</span>을 이뤄요.','ok');
+    $('#nextBtn',box).style.display='';$('#hintBtn',box).style.display='none';
+  }
+  $('#hintBtn',box).onclick=()=>{rec.hint++;say(box,'💡 Mg의 바깥 껍질에는 전자가 <span class="k-o">2개</span>, 산소의 바깥 껍질은 전자가 <span class="k-r">6개</span>라 <span class="k-r">2개가 부족</span>해요. 부족한 자리(점선)로 옮겨 주세요.','info')};
+  $('#nextBtn',box).onclick=next;
+}
+
+function gameMgEq(box,rec,done){
+  let ok=false;
+  const mk=(k,opts)=>`<select class="sel" data-k="${k}">${['?',...opts].map(v=>`<option>${v}</option>`).join('')}</select>`;
+  box.innerHTML=stepBar(['마그네슘 전자 이동','반응식 확인'],2)+mission('📝','<span class="k-g">계수까지 완성된 화학 반응식</span>을 보고, 계수가 뜻하는 것과 <span class="k-r">이동한 전자의 총 개수</span>를 구해 보세요.')+`
+  <div class="card">
+   <div class="k-o" style="font-size:21px">✅ 완성된 화학 반응식 (계수 포함)</div>
+   <div class="bigeq"><span class="k-o">2Mg</span> + <span class="k-r">O₂</span> → <span class="k-g">2MgO</span></div>
+   <div class="eqbox" style="font-size:19px;text-align:left;animation:none">
+    <div><span class="k-v">원자 수 확인</span> : 왼쪽 Mg <span class="k-o">2개</span>, O <span class="k-r">2개</span> → 오른쪽 Mg <span class="k-o">2개</span>, O <span class="k-r">2개</span> (양쪽이 같아요!)</div>
+    <div style="margin-top:6px"><span class="k-v">전자 이동</span> : <span class="k-o">2Mg</span> → <span class="k-b">2Mg²⁺</span> + <span class="k-o">4e⁻</span> <span class="mute">(산화)</span></div>
+    <div style="margin-left:82px"><span class="k-r">O₂</span> + <span class="k-o">4e⁻</span> → <span class="k-r">2O²⁻</span> <span class="mute">(환원)</span></div>
+   </div>
+   <div class="sent" style="margin-top:14px">① 산소 분자(<span class="k-r">O₂</span>) 1개와 반응하는 마그네슘(<span class="k-o">Mg</span>) 원자는 ${mk('q',[1,2,3,4])} 개예요.</div>
+   <div class="sent">② 이 반응에서 이동한 전자의 총 개수는 ${mk('e',[2,4,6,8])} 개예요.</div>
+   <div class="msg info" id="msg">반응식 앞의 <span class="k-r">계수</span>를 잘 읽어 보세요.</div>
+   <div class="btnrow"><button class="btn orange" id="chkBtn">✔ 확인</button><button class="btn green glow" id="nextBtn" style="display:none">⚡ Stage 4 해금!</button></div>
+  </div>`;
+  const val=k=>$(`select[data-k="${k}"]`,box).value;
+  $('#chkBtn',box).onclick=()=>{
+    if(ok)return;
+    if(['q','e'].some(k=>val(k)==='?')){say(box,'모든 칸을 골라 주세요!','bad');sfx.bad();return}
+    const qOK=val('q')==='2',eOK=val('e')==='4';
+    [['q',qOK],['e',eOK]].forEach(([k,v])=>{const s=$(`select[data-k="${k}"]`,box);s.classList.remove('right','wrong');s.classList.add(v?'right':'wrong')});
+    if(qOK&&eOK){
+      ok=true;sfx.win();
+      say(box,'🎉 정답! <span class="k-o">2Mg</span> + <span class="k-r">O₂</span> → <span class="k-g">2MgO</span> 에서 <span class="k-o">계수</span>는 반응하는 입자 수의 비예요. Mg 2개가 각각 전자 2개씩 잃어 <span class="k-v">전자 4개</span>가 O₂ 쪽으로 이동해요.<br>⚡ 최종 분석용 <span class="k-g">전자 스캐너</span>가 활성화되었어요!','ok');
+      $('#chkBtn',box).style.display='none';$('#nextBtn',box).style.display='';return;
+    }
+    const m=[];
+    if(!qOK){tag(rec,'coef');m.push('• 계수는 <span class="k-r">반응하는 입자 수의 비</span>예요. 반응식 <span class="k-o">2Mg</span> + <span class="k-r">O₂</span> → <span class="k-g">2MgO</span> 에서 O₂ 앞에는 숫자가 없으니 1개, Mg 앞의 숫자를 다시 읽어 보세요.')}
+    if(!eOK){tag(rec,'ecount');m.push('• Mg 원자 1개는 전자 <span class="k-r">2개</span>를 잃어요. 반응식에는 Mg가 몇 개 있나요? (O 원자 2개가 각각 2개씩 얻는 것과도 같아요.)')}
+    say(box,'다시 확인해 봐요!<br>'+m.join('<br>'),'bad');sfx.bad();
+  };
+  $('#nextBtn',box).onclick=done;
+}
+
+/* =====================================================================
+   Stage 4 : 전자 이동 분석기
+===================================================================== */
+function gameAnalyzer(box,done){
+  const rec=newRec();
+  const C={
+    c1:{stage:'Stage 2 · 구리 + 질산 은',name:'구리 원자',chg:'Cu → Cu²⁺',ans:'ox',e:'전자 2개 잃음',why:'Cu의 전하가 <span class="k-r">0 → +2</span>로 커졌어요. 전하가 커진다 = 전자를 잃는다 → 산화!'},
+    c2:{stage:'Stage 2 · 구리 + 질산 은',name:'은 이온',chg:'Ag⁺ → Ag',ans:'re',e:'전자 1개 얻음',why:'Ag⁺의 전하가 <span class="k-r">+1 → 0</span>으로 작아졌어요. 전하가 작아진다 = 전자를 얻는다 → 환원!'},
+    c3:{stage:'Stage 3 · 마그네슘 연소',name:'마그네슘 원자',chg:'Mg → Mg²⁺',ans:'ox',e:'전자 2개 잃음',why:'Mg의 전하가 <span class="k-r">0 → +2</span>로 커졌어요. 전자를 잃었으니 산화!'},
+    c4:{stage:'Stage 3 · 마그네슘 연소',name:'산소 원자',chg:'O → O²⁻',ans:'re',e:'전자 2개 얻음',why:'O의 전하가 <span class="k-r">0 → −2</span>로 작아졌어요. 전자를 얻었으니 환원!'},
+    c5:{stage:'Final · 구리의 연소',name:'구리 원자',chg:'Cu → Cu²⁺',ans:'ox',e:'전자 2개 잃음',why:'CuO에서 구리는 Cu²⁺ 상태예요. 전하 <span class="k-r">0 → +2</span>, 전자를 잃었으니 산화!'},
+    c6:{stage:'Final · 구리의 연소',name:'산소 원자',chg:'O → O²⁻',ans:'re',e:'전자 2개 얻음',why:'CuO에서 산소는 O²⁻ 상태예요. 전하 <span class="k-r">0 → −2</span>, 전자를 얻었으니 환원!'}
+  };
+  let phase=1,left=new Set(['c1','c2','c3','c4']);
+  box.innerHTML=mission('🧬','전자 스캐너 가동! 변화 카드를 <span class="k-r">전자를 잃는 반응 = 산화</span>, <span class="k-b">전자를 얻는 반응 = 환원</span> 칸에 알맞게 끌어다 놓으세요.')+`
+  <div class="card">
+   <div class="chip" id="phaseTag">Phase 1 · Stage 2 · 3 반응 분석</div>
+   <div class="eqline" id="eqShow">Cu + 2Ag⁺ → Cu²⁺ + 2Ag &nbsp;|&nbsp; 2Mg + O₂ → 2MgO</div>
+   <div class="tray" id="tray"></div>
+   <div class="slots">
+    <div class="slot ox" data-drop="ox"><h4><span class="k-r">전자를 잃는 반응 = 산화</span></h4><div id="bodyOx"></div></div>
+    <div class="slot re" data-drop="re"><h4><span class="k-b">전자를 얻는 반응 = 환원</span></h4><div id="bodyRe"></div></div>
+   </div>
+   <div class="msg info" id="msg">카드에 적힌 <span class="k-r">전하의 변화</span>를 보고 판단해요.</div>
+   <div class="btnrow"><button class="btn small ghost" id="hintBtn">💡 힌트</button><button class="btn green glow" id="nextBtn" style="display:none">▶ 학습 점검으로</button></div>
+  </div>`;
+  const tray=$('#tray',box);
+  function addCards(ids){
+    shuffle(ids).forEach(id=>{
+      const c=C[id],d=document.createElement('div');d.className='mcard';d.dataset.id=id;
+      d.innerHTML=`<div class="mtag">${c.stage}</div><div class="mname">${c.name}</div><div class="mchg">${c.chg}</div>`;
+      tray.appendChild(d);
+      makeDrag(d,{onDrop:(t)=>{
+        if(!t||!['ox','re'].includes(t.dataset.drop))return;
+        const w=t.dataset.drop;
+        if(w!==c.ans){tag(rec,c.ans==='ox'?'oxToRe':'reToOx');say(box,'❌ 다시! '+c.why,'bad');sfx.bad();t.classList.remove('shake');void t.offsetWidth;t.classList.add('shake');return}
+        sfx.zap();d.remove();left.delete(id);
+        $(w==='ox'?'#bodyOx':'#bodyRe',box).insertAdjacentHTML('beforeend',`<span class="placed">✅ ${c.chg} <span class="mute">(${c.e})</span></span>`);
+        say(box,`📡 스캔 완료 : ${c.name} <span class="k-v">${c.chg}</span> → ${c.e} → <span class="${w==='ox'?'k-r':'k-b'}">${w==='ox'?'산화':'환원'}</span>`,'ok');
+        if(left.size===0)nextPhase();
+      }});
+    });
+  }
+  addCards(['c1','c2','c3','c4']);
+  function nextPhase(){
+    if(phase===1){
+      phase=2;left=new Set(['c5','c6']);
+      $('#phaseTag',box).textContent='Final Phase · 구리의 연소 (최종 미션)';
+      $('#eqShow',box).innerHTML='2Cu + O₂ → 2CuO &nbsp;<span class="mute" style="font-size:16px">(CuO는 Cu²⁺와 O²⁻가 결합한 물질)</span>';
+      say(box,'🏁 <span class="k-v">최종 미션</span> : 구리를 가열해 연소시킬 때 <span class="k-r">전자를 잃는 물질</span>과 <span class="k-b">전자를 얻는 물질</span>을 구분해 보세요!','info');sfx.ok();
+      $('#bodyOx',box).innerHTML+='<hr style="border:1px dashed #ffc9de">';$('#bodyRe',box).innerHTML+='<hr style="border:1px dashed #a5d8ff">';
+      addCards(['c5','c6']);
+    }else{
+      sfx.win();
+      say(box,'🎉 <span class="k-v">최종 클리어!</span> "산화와 환원은 <span class="k-r">전자의 이동</span>에 의해 <span class="k-r">동시에</span> 일어난다."<br><span class="k-o">산화</span> = 전자를 잃음 · <span class="k-b">환원</span> = 전자를 얻음 · 전자를 잃는 물질이 있으면 반드시 전자를 얻는 물질도 있어요.','ok');
+      $('#hintBtn',box).style.display='none';$('#nextBtn',box).style.display='';
+    }
+  }
+  $('#hintBtn',box).onclick=()=>{rec.hint++;say(box,'💡 <span class="k-o">전하가 + 쪽으로 커지면</span> 전자를 잃은 것(산화), <span class="k-o">전하가 − 쪽으로 작아지면</span> 전자를 얻은 것(환원)이에요.','info')};
+  $('#nextBtn',box).onclick=()=>done(rec);
+}
+
+/* =====================================================================
+   학습 점검 (객관식 + 서술형)
+===================================================================== */
+const MCQ=[
+ {topic:'구리의 산화',q:'구리 테이프를 질산 은 수용액에 넣으면 구리(Cu)가 Cu²⁺로 변합니다. 이 변화에 대한 설명으로 옳은 것은?',
+  o:['전자를 얻어 환원된다.','전자를 얻어 산화된다.','전자를 잃어 산화된다.','전자를 잃어 환원된다.'],a:2,
+  fb:['Cu는 0 → +2로 전하가 커졌어요. 전자를 얻으면 전하가 작아져야 하니, 구리는 전자를 <span class="k-r">잃은</span> 거예요.','구리가 전자를 <span class="k-r">잃었다</span>는 점이 달라요. 전자를 얻는 것이 아니라 잃는 변화이고, 그 이름이 산화예요.','','전자를 잃는다는 건 맞아요! 하지만 전자를 잃는 변화의 이름은 환원이 아니라 <span class="k-r">산화</span>예요.'],
+  exp:'Cu → Cu²⁺ + 2e⁻ : 전자를 <span class="k-r">잃는</span> 변화 = <span class="k-r">산화</span>'},
+ {topic:'이동한 전자 수',q:'Cu + 2Ag⁺ → Cu²⁺ + 2Ag 반응에서 구리에서 은 이온으로 이동한 전자는 모두 몇 개인가?',
+  o:['1개','2개','3개','4개'],a:1,
+  fb:['Cu 원자 1개는 전자를 2개 잃어 Cu²⁺(+2)가 돼요. 1개는 부족해요!','','전자는 새로 생기거나 사라지지 않아요. Cu가 잃은 <span class="k-r">2개</span>가 그대로 Ag⁺ 2개(각 1개씩)에게 가요.','같은 전자를 양쪽에서 두 번 센 것 같아요. 잃은 전자 2개 = 얻은 전자 2개, 즉 <span class="k-r">2개</span>가 이동해요.'],
+  exp:'Cu가 잃은 전자 2개 = Ag⁺ 2개가 각각 얻은 전자 1개씩 → 이동한 전자는 <span class="k-r">2개</span>'},
+ {topic:'산소의 환원',q:'마그네슘이 연소할 때 산소 원자(O → O²⁻)에 대한 설명으로 옳은 것은?',
+  o:['전자 2개를 얻어 환원된다.','전자 2개를 잃어 산화된다.','전자 2개를 얻어 산화된다.','전자를 주고받지 않는다.'],a:0,
+  fb:['','O의 전하가 0 → −2로 작아졌어요. 전자를 잃으면 전하가 커져야 해요. 산소는 전자를 <span class="k-r">얻었어요</span>.','전자를 얻는다는 건 맞아요! 하지만 전자를 얻는 변화의 이름은 산화가 아니라 <span class="k-r">환원</span>이에요.','Mg가 내놓은 전자 2개를 산소가 받았어요. 전자의 <span class="k-r">이동</span>이 있었어요!'],
+  exp:'O + 2e⁻ → O²⁻ : 전자를 <span class="k-b">얻는</span> 변화 = <span class="k-b">환원</span>'},
+ {topic:'산화·환원의 동시성',q:'산화·환원 반응에 대한 설명으로 옳은 것은?',
+  o:['산화만 단독으로 일어날 수 있다.','전자를 얻는 물질은 산화된다.','산화와 환원은 전자의 이동으로 동시에 일어난다.','환원되는 물질은 전자를 잃는다.'],a:2,
+  fb:['전자를 잃는 물질이 있으면, 그 전자를 받는 물질이 반드시 있어야 해요. 그래서 산화만 단독으로 일어날 수 없어요.','전자를 얻는 물질은 <span class="k-r">환원</span>돼요.','','환원되는 물질은 전자를 <span class="k-r">얻어요</span>. 전자를 잃는 것은 산화예요.'],
+  exp:'전자를 잃는 물질(산화)과 얻는 물질(환원)은 전자의 이동으로 <span class="k-v">동시에</span> 나타나요.'},
+ {topic:'수용액 색 변화',q:'구리 테이프를 넣은 질산 은 수용액이 점차 푸른빛을 띠는 까닭으로 가장 알맞은 것은?',
+  o:['수용액 속 Ag⁺가 늘어나서','NO₃⁻가 구리 표면에 붙어서','물(H₂O)이 전자를 얻어서','Cu²⁺가 생성되어 수용액에 녹아 나와서'],a:3,
+  fb:['Ag⁺는 전자를 얻어 Ag로 석출되므로 오히려 줄어들어요.','NO₃⁻는 반응에 참여하지 않는 구경꾼 이온이에요.','이 반응에서 전자를 얻는 것은 물이 아니라 <span class="k-r">Ag⁺</span>예요.',''],
+  exp:'구리가 전자를 잃고 생긴 <span class="k-b">Cu²⁺</span>가 물에 녹아 푸른빛을 내요.'}
+];
+/* 서술형 채점 (핵심어 기반) */
+const CU_=/(구리|Cu)/,AG_=/(은이온|Ag)/,MG_=/(마그네슘|Mg)/,O_=/(산소|(^|[^A-Za-z])O)/;
+const LOSE=/(잃|내놓|내주|내어|내보|방출|빼앗기|주고|준다|주어|줘)/,GAIN=/(얻|받|가져|가지|흡수)/;
+function prep(t){const n=t.replace(/\s+/g,'').replace(/⁺/g,'+').replace(/⁻/g,'-').replace(/²/g,'2').replace(/₂/g,'2').replace(/₃/g,'3');return{n,cl:n.split(/[.,;。!?\n]|되고|되며|이고|이며|으며|하고|지만|반면|한편|그리고/).filter(Boolean)}}
+const WQ=[
+ {q:'질산 은 수용액에 담근 구리 테이프 표면에서 일어나는 변화를 <span class="k-r">전자의 이동</span>을 이용해 설명하시오. (산화되는 물질과 환원되는 물질을 반드시 포함할 것)',
+  sample:'구리(Cu)는 전자 2개를 잃고 Cu²⁺가 되어 수용액에 녹아 나오므로 산화된다. 은 이온(Ag⁺)은 구리가 내놓은 전자를 1개씩 얻어 은(Ag)이 되어 구리 표면에 석출되므로 환원된다. 즉 전자가 구리에서 은 이온으로 이동하며, 산화와 환원은 동시에 일어난다.',
+  rub:[
+   {l:'구리가 전자를 잃는다',p:2,f:'구리(Cu)가 전자를 <span class="k-r">잃는다(내놓는다)</span>는 설명이 필요해요. Cu → Cu²⁺ + 2e⁻ 를 떠올려 보세요.',
+    t:({n,cl})=>cl.some(c=>CU_.test(c)&&LOSE.test(c)&&!/(구리|Cu)(는|가|이|은)?전자를?얻/.test(c))||/Cu(→|->|=>|=)Cu2\+\+?2e/.test(n)},
+   {l:'구리가 산화된다',p:2,f:'전자를 잃는 구리는 <span class="k-r">산화</span>된다고 써야 해요.',
+    t:({n,cl})=>cl.some(c=>CU_.test(c)&&/산화/.test(c)&&!/환원/.test(c))||/산화(되는|된)?(물질|것)(은|는|이)?(구리|Cu)/.test(n)},
+   {l:'은 이온이 전자를 얻는다',p:2,f:'은 이온(Ag⁺)이 전자를 <span class="k-r">얻어</span> 은(Ag)이 된다는 설명이 빠졌어요.',
+    t:({n,cl})=>cl.some(c=>AG_.test(c)&&GAIN.test(c)&&/전자/.test(c))||/Ag\+\+?e-?(→|->|=>)Ag/.test(n)},
+   {l:'은 이온이 환원된다',p:2,f:'전자를 얻는 은 이온은 <span class="k-r">환원</span>된다고 써야 해요.',
+    t:({n,cl})=>cl.some(c=>AG_.test(c)&&/환원/.test(c)&&!/산화/.test(c))||/환원(되는|된)?(물질|것)(은|는|이)?(은이온|Ag)/.test(n)},
+   {l:'전자의 이동을 언급',p:1,f:'전자가 구리에서 은 이온으로 <span class="k-r">이동</span>한다는 표현을 넣어 보세요.',
+    t:({n})=>/전자/.test(n)&&/(이동|전달|주고받|건네|넘어|옮겨|→)/.test(n)},
+   {l:'동시에 일어남을 언급',p:1,f:'산화와 환원이 <span class="k-r">동시에</span> 일어난다는 점도 덧붙여 보세요.',t:({n})=>/동시/.test(n)}
+  ]},
+ {q:'마그네슘의 연소 반응(2Mg + O₂ → 2MgO)에서 <span class="k-r">전자의 이동 방향</span>을 설명하고, Mg와 O가 각각 산화·환원 중 무엇에 해당하는지 쓰시오. 그리고 두 반응(구리와 은 이온, 마그네슘의 연소)에서 알 수 있는 산화와 환원의 공통점을 한 문장으로 쓰시오.',
+  sample:'마그네슘(Mg)은 전자 2개를 잃고 Mg²⁺가 되므로 산화되고, 산소(O)는 그 전자를 얻어 O²⁻가 되므로 환원된다. 전자는 Mg에서 O로 이동하며, Mg²⁺와 O²⁻가 이온 결합하여 MgO가 생성된다. 두 반응 모두 산화와 환원은 전자의 이동으로 동시에 일어난다는 공통점이 있다.',
+  rub:[
+   {l:'마그네슘이 전자를 잃는다',p:2,f:'마그네슘(Mg)이 전자 2개를 <span class="k-r">잃는다</span>는 설명이 필요해요.',
+    t:({n,cl})=>cl.some(c=>MG_.test(c)&&LOSE.test(c)&&!/(마그네슘|Mg)(는|가|이|은)?전자를?얻/.test(c))||/Mg(→|->|=>|=)Mg2\+\+?2e/.test(n)},
+   {l:'마그네슘이 산화된다',p:2,f:'전자를 잃는 마그네슘은 <span class="k-r">산화</span>돼요.',
+    t:({n,cl})=>cl.some(c=>MG_.test(c)&&/산화/.test(c)&&!/환원/.test(c)&&!/산화마그네슘/.test(c))||/산화(되는|된)?(물질|것)(은|는|이)?(마그네슘|Mg)/.test(n)||cl.some(c=>MG_.test(c)&&/산화(된|되)/.test(c))},
+   {l:'산소가 전자를 얻는다',p:2,f:'산소(O)가 마그네슘이 내놓은 전자를 <span class="k-r">얻는다</span>는 설명이 빠졌어요.',
+    t:({cl})=>cl.some(c=>O_.test(c)&&GAIN.test(c)&&/전자/.test(c))},
+   {l:'산소가 환원된다',p:2,f:'전자를 얻는 산소는 <span class="k-r">환원</span>돼요.',
+    t:({n,cl})=>cl.some(c=>O_.test(c)&&/환원/.test(c)&&!/산화(?!마그네슘)/.test(c.replace(/산화마그네슘/g,'')))||/환원(되는|된)?(물질|것)(은|는|이)?(산소|O)/.test(n)},
+   {l:'전자의 이동 방향(Mg → O)',p:1,f:'전자가 <span class="k-r">Mg에서 O로 이동</span>한다는 방향을 밝혀 주세요.',
+    t:({n})=>/전자/.test(n)&&/(이동|전달|주고받|건네|넘어|옮겨|→)/.test(n)},
+   {l:'공통점 : 동시에 일어남',p:1,f:'두 반응의 공통점은 산화와 환원이 전자의 이동으로 <span class="k-r">동시에</span> 일어난다는 것이에요.',t:({n})=>/동시/.test(n)}
+  ]}
+];
+function evalWritten(i,text){
+  const pr=prep(text),items=WQ[i].rub.map(r=>({l:r.l,p:r.p,f:r.f,ok:!!r.t(pr)}));
+  return{score:items.reduce((a,x)=>a+(x.ok?x.p:0),0),items};
+}
+const mcqCredit=w=>4*[1,.6,.3][Math.min(w,2)];
+
+/* 객관식 블록 (첫 도전 / 보충 공용) */
+function renderMCQ(container,idxs,mode,onChange){
+  container.innerHTML=idxs.map(i=>{const q=MCQ[i];return `<div class="qcard" data-i="${i}"><div class="qno">Q${i+1}. <span class="mute" style="font-size:15px">(${q.topic})</span></div><div>${q.q}</div>${q.o.map((o,k)=>`<button class="opt" data-k="${k}">${'①②③④'[k]} ${o}</button>`).join('')}<div class="msg" data-fb style="display:none"></div></div>`}).join('');
+  const local={};
+  $$('.qcard',container).forEach(card=>{
+    const i=+card.dataset.i,q=MCQ[i];local[i]=0;
+    $$('.opt',card).forEach(b=>b.onclick=()=>{
+      const k=+b.dataset.k,fb=$('[data-fb]',card);fb.style.display='';
+      if(k===q.a){
+        $$('.opt',card).forEach(x=>x.disabled=true);b.classList.add('right');card.classList.add('done');sfx.ok();
+        fb.className='msg ok';fb.innerHTML='⭕ 정답! '+q.exp;
+        const m=S.mcq[i];
+        if(mode==='first'){m.wrong=local[i];m.credit=mcqCredit(local[i]);m.done=true}
+        else{m.retry++;m.credit=Math.max(m.credit,4*CAP*(local[i]===0?1:.7))}
+        onChange&&onChange();
+      }else{
+        local[i]++;b.classList.add('wrong');b.disabled=true;sfx.bad();fb.className='msg bad';fb.innerHTML='❌ '+q.fb[k];
+      }
+    });
+  });
+}
+/* 서술형 블록 */
+function renderWritten(container,idxs,mode,onChange){
+  container.innerHTML=idxs.map(i=>`<div class="qcard" data-w="${i}"><div class="qno">서술형 ${i+1}</div><div style="margin-bottom:6px">${WQ[i].q}</div><textarea rows="5" placeholder="여기에 답을 써 보세요. (20자 이상)">${mode==='retry'?(S.wr[i].text||'').replace(/</g,'&lt;'):''}</textarea><div class="btnrow"><button class="btn small violet" data-ev>✍ 제출하고 점검받기</button><button class="btn small ghost" data-sm style="display:none">📖 모범 답안 보기</button></div><div data-res></div></div>`).join('');
+  $$('.qcard',container).forEach(card=>{
+    const i=+card.dataset.w,ta=$('textarea',card),res=$('[data-res]',card);
+    $('[data-sm]',card).onclick=()=>{const s=$('.sample',card);if(s){s.remove();return}res.insertAdjacentHTML('beforeend',`<div class="sample">📖 모범 답안 : ${WQ[i].sample}</div>`)};
+    $('[data-ev]',card).onclick=()=>{
+      const t=ta.value.trim();
+      if(t.length<20){res.innerHTML='<div class="msg bad">조금 더 자세히 써 볼까요? (20자 이상)</div>';sfx.bad();return}
+      const r=evalWritten(i,t),w=S.wr[i];w.att++;
+      let shown=r.score;
+      if(mode==='first'){w.text=t;w.score=r.score;w.items=r.items;if(w.att===1)w.firstMissing=r.items.filter(x=>!x.ok).map(x=>x.l)}
+      else{const credit=Math.min(r.score,10*CAP);shown=credit;w.retry++;if(credit>=(w.score||0)){w.score=credit;w.text=t;w.items=r.items}}
+      const miss=r.items.filter(x=>!x.ok);
+      res.innerHTML=`<div class="msg ${miss.length?'info':'ok'}" style="margin-top:8px">${mode==='retry'?'보충 채점':'채점 결과'} : <span class="k-r">${fmt(shown)}점</span> / 10점${mode==='retry'&&shown<r.score?` <span class="mute">(보충 수행 최대 ${fmt(10*CAP)}점)</span>`:''}</div>`+
+        r.items.map(x=>`<div class="chk"><span class="ic">${x.ok?'✅':'⬜'}</span><span>${x.ok?`<span class="k-g">${x.l}</span>`:`<span class="k-r">${x.l}</span> — ${x.f}`}</span></div>`).join('')+
+        (miss.length?'<div class="mute" style="font-size:16px;margin-top:4px">빠진 부분을 보완해서 다시 제출할 수 있어요.</div>':'<div class="okline">완벽해요! 핵심 내용을 모두 담았어요.</div>');
+      $('[data-sm]',card).style.display='';sfx[miss.length?'pop':'win']();
+      onChange&&onChange();
+    };
+  });
+}
+function mountQuiz(){
+  const box=shell('quiz','학습 점검','⑤ 학습 점검 퀴즈 & 서술형');
+  box.innerHTML=mission('📚','배운 내용을 확인해요! <span class="k-r">틀리면 이유를 알려 주니</span> 차근차근 다시 골라 보세요. 서술형은 <span class="k-r">핵심어</span>를 기준으로 점검해 줘요.')+`
+  <div class="card"><h3 style="margin:0 0 8px;color:var(--violet);font-size:23px">A. 객관식 (5문항)</h3><div id="mcqBox"></div></div>
+  <div class="card"><h3 style="margin:0 0 8px;color:var(--violet);font-size:23px">B. 서술형 (2문항)</h3><div id="wrBox"></div></div>
+  <div class="card"><div class="msg info" id="msg">객관식을 모두 맞히고 서술형을 두 문항 모두 제출하면 <span class="k-r">미션 성공</span> 탭이 열려요.</div><div class="btnrow"><button class="btn orange glow" id="finBtn" disabled>🏆 미션 성공 확인하기</button></div></div>`;
+  const chk=()=>{
+    const m=S.mcq.every(q=>q.done),w=S.wr.every(x=>x.att>0&&x.score!==null);
+    const b=$('#finBtn',box);b.disabled=!(m&&w);
+    say(box,m&&w?'✅ 모든 문항을 완료했어요! 버튼을 눌러 결과를 확인해요.':`진행 상황 : 객관식 ${S.mcq.filter(q=>q.done).length}/5 · 서술형 ${S.wr.filter(x=>x.att>0).length}/2`,m&&w?'ok':'info');
+  };
+  renderMCQ($('#mcqBox',box),[0,1,2,3,4],'first',chk);
+  renderWritten($('#wrBox',box),[0,1],'first',chk);
+  $('#finBtn',box).onclick=()=>{S.done.quiz=true;unlock('result');sfx.win();go('result')};
+}
+
+/* =====================================================================
+   미션 성공 (결과 리포트)
+===================================================================== */
+function partIssues(id){
+  const P=S.p[id],t=P&&P.rec?P.rec.tags:{},r=[];
+  const n=k=>Math.round(t[k]||0);
+  if(id==='p1'){if(n('order'))r.push(`착용 순서(<span class="k-r">실험복 → 보안경 → 고무장갑</span>)를 헷갈려 ${n('order')}번 정정했어요`);if(n('wrongItem'))r.push(`슬리퍼·헤드폰처럼 실험에 부적절한 복장을 ${n('wrongItem')}번 골랐어요`)}
+  if(id==='p2'){
+    if(t.wrongTarget)r.push('전자를 (+)전하의 은 이온이 아닌 <span class="k-r">구경꾼 이온(NO₃⁻)</span>에게 주려 한 적이 있어요');
+    if(t.dup)r.push('이미 전자를 받은 은 원자에 다시 전자를 옮기려 했어요');
+    if(t.miss)r.push('전자를 이온 위에 정확히 옮기지 못한 시도가 있었어요');
+    if(t.cuDir||t.cuOx)r.push('구리가 <span class="k-r">전자를 잃어 산화</span>된다는 판단이 흔들렸어요');
+    if(t.agDir||t.agRed)r.push('은 이온이 <span class="k-r">전자를 얻어 환원</span>된다는 판단이 흔들렸어요');
+    if(t.simul)r.push('산화와 환원이 <span class="k-r">동시에</span> 일어난다는 점을 놓쳤어요');
+  }
+  if(id==='p3'&&t.miss)r.push('마그네슘의 전자를 산소의 빈자리로 옮기는 과정에서 시행착오가 있었어요');
+  if(id==='p4'){if(t.coef)r.push('완성된 반응식의 <span class="k-r">계수(반응하는 입자 수의 비)</span>를 읽는 데 오답이 있었어요');if(t.ecount)r.push('이동한 <span class="k-r">전자의 총 개수(2Mg → 4e⁻)</span>를 세는 데 오답이 있었어요')}
+  if(id==='p5'){if(t.oxToRe)r.push(`전자를 <span class="k-r">잃는</span> 물질을 환원 칸에 ${Math.round(t.oxToRe)}번 놓았어요 (잃음 = 산화)`);if(t.reToOx)r.push(`전자를 <span class="k-r">얻는</span> 물질을 산화 칸에 ${Math.round(t.reToOx)}번 놓았어요 (얻음 = 환원)`)}
+  if(id==='p6'){const m=S.mcq.map((q,i)=>q.wrong>0?MCQ[i].topic:null).filter(Boolean);if(m.length)r.push(`첫 시도에서 틀린 문항 : ${m.join(', ')}`)}
+  if(id==='p7'){S.wr.forEach((w,i)=>{if(w.firstMissing.length)r.push(`서술형 ${i+1}에서 빠졌던 핵심 : ${w.firstMissing.join(', ')}`)})}
+  if(P&&P.rec&&P.rec.hint)r.push(`힌트를 ${P.rec.hint}번 사용했어요`);
+  return r;
+}
+function partNote(id){
+  if(id==='p6')return `첫 시도 정답 ${S.mcq.filter(q=>q.wrong===0).length}/5`;
+  if(id==='p7')return S.wr.map((w,i)=>`서술형${i+1} ${fmt(w.score||0)}/10`).join(' · ');
+  const P=S.p[id],r=P.rec;return `오류 ${fmt(r?r.err:0)}회 · 힌트 ${r?r.hint:0}회`+(P.retry?` · 보충 ${P.retry}회`:'');
+}
+const retried=id=>id==='p6'?S.mcq.some(q=>q.retry):id==='p7'?S.wr.some(w=>w.retry):S.p[id].retry>0;
+const GMSG={A:'전자의 이동을 바탕으로 산화·환원을 매우 정확하게 이해하고 있어요. 실험 과정도 안정적이었습니다.',B:'핵심 개념을 잘 이해하고 있어요. 몇 가지 부족한 과정만 보완하면 A단계에 도달할 수 있어요.',C:'기본 개념은 이해했지만 헷갈리는 부분이 남아 있어요. 부족한 수행 과정을 보충해 봅시다.',D:'산화·환원 개념이 아직 흔들리고 있어요. 아래 보충 시뮬레이션으로 기초부터 차근차근 다져 봅시다.',F:'개념을 다시 익힐 필요가 있어요. 부족한 과정부터 하나씩 보충 시뮬레이션을 진행해 봅시다.'};
+function buildFeedback(total,g){
+  const strong=ORDER.filter(id=>!isDef(id)),weak=ORDER.filter(isDef);
+  let h=`<p><span class="k-o">${idLabel()}</span> <span class="k-v">${S.name}</span> 학생은 「은빛 변신과 전자의 비밀」의 모든 스테이지와 학습 점검을 마치고 종합 <span class="k-r">${Math.round(total)}점, ${g[0]}단계(${g[3]})</span>를 받았습니다. ${GMSG[g[0]]}</p>`;
+  if(strong.length)h+=`<p><span class="k-g">잘한 점</span> : ${strong.map(id=>'<span class="k-b">'+PARTS[id].name+'</span>').join(', ')} 과정을 안정적으로 수행했습니다.${strong.some(retried)?' 특히 보충 시뮬레이션에 다시 도전해 부족했던 부분을 스스로 고쳐 낸 점이 돋보입니다.':''}</p>`;
+  else h+=`<p><span class="k-g">잘한 점</span> : 끝까지 모든 미션을 완주한 것이 가장 큰 성과입니다. 이제 아래의 보충 과정으로 하나씩 채워 봅시다.</p>`;
+  if(weak.length){
+    h+=`<p><span class="k-o">보완할 점</span></p>`;
+    weak.forEach(id=>{const is=partIssues(id);h+=`<p>• <span class="k-b">${PARTS[id].name}</span> (${fmt(partScore(id))}/${PARTS[id].max}점) : ${is.length?is.join(' / ')+'.':'전반적인 정확도를 조금 더 높여 보세요.'}</p>`});
+  }else h+=`<p><span class="k-o">보완할 점</span> : 뚜렷한 부족 과정이 없습니다. 지금의 이해를 다른 산화·환원 반응(예: 철의 부식, 연소)에도 적용해 보세요.</p>`;
+  const w1=S.wr[0],w2=S.wr[1];
+  h+=`<p><span class="k-t">서술형 총평</span> : 서술형 1은 ${fmt(w1.score||0)}점, 서술형 2는 ${fmt(w2.score||0)}점입니다. `+(((w1.score||0)+(w2.score||0))>=18?'구리·은 이온·마그네슘·산소가 전자를 잃거나 얻는 과정을 용어와 함께 논리적으로 설명했습니다.':'"어떤 물질이 전자를 잃고(산화), 어떤 물질이 전자를 얻는지(환원)"를 짝지어 쓰면 더 정확한 설명이 됩니다.')+`</p>`;
+  const rc=ORDER.reduce((a,id)=>a+(id==='p6'?S.mcq.reduce((x,q)=>x+q.retry,0):id==='p7'?S.wr.reduce((x,w)=>x+w.retry,0):S.p[id].retry),0);
+  if(rc)h+=`<p><span class="k-g">보충 수행 이력</span> : 보충 시뮬레이션에 총 ${rc}회 도전했습니다. 틀린 부분만 다시 도전하는 태도가 좋은 학습 습관입니다.</p>`;
+  h+=`<p><span class="k-v">핵심 정리</span> : <span class="k-o">산화</span>는 전자를 <span class="k-r">잃는</span> 변화, <span class="k-b">환원</span>은 전자를 <span class="k-r">얻는</span> 변화이며, 두 변화는 전자의 이동으로 <span class="k-r">동시에</span> 일어납니다.</p>`;
+  return h;
+}
+function renderResult(){
+  const total=totalScore(),g=gradeOf(Math.round(total)),today=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  const weak=ORDER.filter(isDef).sort((a,b)=>gainOf(b)-gainOf(a));
+  const potential=total+weak.reduce((a,id)=>a+gainOf(id),0);
+  const nextG=[...GRADES].reverse().find(x=>x[1]>Math.round(total));
+  let plan='';
+  if(!weak.length)plan='<div class="okline" style="font-size:19px">🎉 부족한 수행 과정이 없어요! 모든 과정이 충분히 안정적입니다.</div>';
+  else{
+    const reach=nextG?(potential>=nextG[1]?`아래 과정을 모두 보충하면 <span class="k-r">${gradeOf(Math.round(potential))[0]}단계</span>까지 올릴 수 있어요.`:`아래 과정을 모두 보충하면 최대 약 <span class="k-r">${Math.round(potential)}점</span>까지 올릴 수 있어요.`):'';
+    plan=`<p style="margin:0 0 6px">${nextG?`현재 <span class="k-r">${g[0]}단계</span> → <span class="k-b">${nextG[0]}단계</span>까지 <span class="k-r">${Math.max(1,nextG[1]-Math.round(total))}점</span> 남았어요. `:''}${reach}<br><span class="k-v">전체를 다시 할 필요 없이</span>, 부족했던 아래 과정만 골라 보충 시뮬레이션을 수행하면 돼요.</p>`+
+    weak.map((id,i)=>`<div class="planitem"><div><span class="k-o">${i===0?'🥇 우선순위 1 · ':''}${PARTS[id].stage}</span> <span class="k-b">${PARTS[id].name}</span><div class="psub">현재 ${fmt(partScore(id))}/${PARTS[id].max}점 · 보충 성공 시 최대 <span class="k-r">+${fmt(gainOf(id))}점</span></div></div><span data-html2canvas-ignore="true"><button class="btn small orange" data-re="${id}">🔁 보충하기</button></span></div>`).join('')+
+    ORDER.filter(id=>!isDef(id)).map(id=>`<div class="okline">✅ ${PARTS[id].name} — 충분해요. 다시 할 필요 없어요!</div>`).join('');
+  }
+  const html=`
+  <div class="report" id="reportCard">
+   <div class="rep-head">
+    <div><div class="rep-title">🏆 MISSION SUCCESS</div><div class="rep-sub">은빛 변신과 전자의 비밀 · 산화·환원 게임 시뮬레이션 (고등학교 2학년 통합과학)</div></div>
+    <div class="brand"><img src="${$('#brandimg').src}" alt="EARTH LJY 로고"><div class="mail">earthljy@ai.jne.kr</div></div>
+   </div>
+   <div class="rep-top">
+    <div class="gbadge" style="background:${g[2]}">${g[0]}</div>
+    <div><div style="font-size:26px"><span class="k-o">${idLabel()}</span> <span class="k-v">${S.name}</span> 학생</div><div class="mute">${today} 수행 · 종합 <span class="k-r" style="font-size:26px">${Math.round(total)}</span> / 100점 · <span style="color:${g[2]}">${g[0]}단계 (${g[3]})</span></div>
+    <div class="scale" style="margin-top:6px">${GRADES.map(x=>`<span class="${x[0]===g[0]?'me':''}" style="${x[0]===g[0]?'background:'+x[2]:''}">${x[0]} ${x[0]==='F'?'60미만':x[1]+'점~'}</span>`).join('')}</div></div>
+   </div>
+   <h3>① 스테이지 클리어 현황</h3>
+   <div class="stg"><span>⭐ Stage 1 안전 실험실</span><span>⭐ Stage 2 은빛 변신</span><span>⭐ Stage 3 불꽃 속 전자</span><span>⭐ Stage 4 전자 분석기</span><span>⭐ 학습 점검</span></div>
+   <h3>② 수행 과정 평가 (A · B · C · D · F)</h3>
+   ${ORDER.map(id=>{const sc=partScore(id),M=PARTS[id].max,pc=sc/M,col=pc>=DEF?'#2b9a44':pc>=.7?'#e8590c':'#d6336c';return `<div class="prow"><div><div class="pname">${PARTS[id].name}</div><div class="psub">${PARTS[id].stage} · ${partNote(id)}</div></div><div class="bar"><i style="width:${Math.round(pc*100)}%;background:${col}"></i></div><div style="color:${col}">${fmt(sc)} / ${M}점 ${pc>=DEF?'✅':'⚠'}</div></div>`}).join('')}
+   <h3>③ 나의 서술형 답안</h3>
+   ${S.wr.map((w,i)=>`<div class="k-v">서술형 ${i+1} <span class="mute">(${fmt(w.score||0)}/10점)</span></div><div class="mute" style="font-size:16px">${WQ[i].q}</div><div class="ans">${(w.text||'').replace(/</g,'&lt;')}</div>`).join('')}
+   <h3>④ 수행 과정 피드백</h3>
+   <div class="fbtext">${buildFeedback(total,g)}</div>
+   <h3>⑤ 등급 상향을 위한 보충 안내</h3>
+   <div class="plan">${plan}</div>
+   <div class="mute" style="text-align:right;margin-top:14px;font-size:15px">© EARTH LJY · earthljy@ai.jne.kr</div>
+  </div>
+  <div class="btnrow" style="margin-top:16px">
+   <button class="btn green" id="dlBtn">📥 결과 이미지(PNG)로 저장</button>
+   <button class="btn ghost" id="restartBtn">↺ 처음부터 다시 하기</button>
+  </div>
+  <div class="msg" id="msg" style="display:none"></div>`;
+  $('#panel-result').innerHTML=html;
+  $$('[data-re]').forEach(b=>b.onclick=()=>startReinf(b.dataset.re));
+  $('#dlBtn').onclick=downloadImg;
+  $('#restartBtn').onclick=()=>{if(confirm('처음부터 다시 시작할까요? (지금까지의 기록이 사라져요)'))location.reload()};
+}
+async function downloadImg(){
+  const m=$('#panel-result #msg');m.style.display='';
+  if(typeof html2canvas==='undefined'){m.className='msg bad';m.innerHTML='이미지 저장 도구를 불러오지 못했어요. 인터넷 연결을 확인한 뒤 다시 시도하거나, 화면 캡처를 이용해 주세요.';return}
+  m.className='msg info';m.textContent='이미지를 만드는 중이에요…';
+  try{
+    const cv=await html2canvas($('#reportCard'),{scale:2,backgroundColor:'#ffffff',useCORS:true});
+    const a=document.createElement('a');a.download=`산화환원_미션결과_${S.grade}학년${S.cls}반${S.num}번_${S.name}.png`;a.href=cv.toDataURL('image/png');document.body.appendChild(a);a.click();a.remove();
+    m.className='msg ok';m.textContent='✅ 이미지가 저장되었어요!';sfx.ok();
+  }catch(e){m.className='msg bad';m.textContent='이미지 저장 중 문제가 생겼어요. 화면 캡처를 이용해 주세요.'}
+}
+
+/* =====================================================================
+   보충 시뮬레이션 (부족한 과정만 다시)
+===================================================================== */
+function startReinf(id){
+  const p=$('#panel-reinf');
+  p.innerHTML=`<div class="stagehead"><div><span class="chip">🔁 보충 시뮬레이션</span><h2>${PARTS[id].name}</h2></div><button class="btn ghost small" id="backRep">← 리포트로 돌아가기</button></div>
+   <div class="card" style="padding:10px 16px">부족했던 <span class="k-r">이 과정만</span> 다시 도전해요! 성공하면 점수가 올라가요. (보충으로 얻을 수 있는 점수는 이 과정 만점의 최대 ${Math.round(CAP*100)}%)</div><div id="gb-reinf"></div>`;
+  $('#backRep').onclick=()=>go('result');
+  go('reinf');
+  const b=$('#gb-reinf');
+  const fin=(before,after)=>{
+    sfx.win();b.innerHTML=`<div class="card clearcard"><div class="big">${after>before+1e-6?'📈':'💪'}</div><p style="font-size:22px">보충 완료! <span class="k-b">${PARTS[id].name}</span><br>${fmt(before)}점 → <span class="k-r">${fmt(after)}점</span> ${after>before+1e-6?'':'<span class="mute" style="font-size:17px">(이번엔 점수가 오르지 않았어요. 힌트 없이 실수 없이 다시 도전해 보세요!)</span>'}</p><button class="btn green glow" id="toRep">📊 리포트에서 결과 확인</button></div>`;
+    $('#toRep').onclick=()=>go('result');
+  };
+  const before=partScore(id);
+  if(id==='p1')gameDress(b,rec=>{const r=applyRetry('p1',rec);fin(r.before,r.after)});
+  else if(id==='p2'){const rec=newRec();gameCuMicro(b,rec,()=>gameCuJudge(b,rec,()=>{const r=applyRetry('p2',rec);fin(r.before,r.after)}))}
+  else if(id==='p3'){const rec=newRec();gameMgMicro(b,rec,()=>{const r=applyRetry('p3',rec);fin(r.before,r.after)})}
+  else if(id==='p4'){const rec=newRec();gameMgEq(b,rec,()=>{const r=applyRetry('p4',rec);fin(r.before,r.after)})}
+  else if(id==='p5')gameAnalyzer(b,rec=>{const r=applyRetry('p5',rec);fin(r.before,r.after)});
+  else if(id==='p6'){
+    const idx=S.mcq.map((q,i)=>q.credit<4*DEF-1e-6?i:-1).filter(i=>i>=0);
+    b.innerHTML=`<div class="card"><div id="mcqB"></div><div class="btnrow"><button class="btn green" id="reFin" disabled>✔ 보충 완료</button></div></div>`;
+    const upd=()=>{$('#reFin',b).disabled=!idx.every(i=>$$('.qcard',b)[idx.indexOf(i)].classList.contains('done'))};
+    renderMCQ($('#mcqB',b),idx,'retry',upd);
+    $('#reFin',b).onclick=()=>fin(before,partScore('p6'));
+  }else if(id==='p7'){
+    const idx=S.wr.map((w,i)=>(w.score||0)<10*DEF-1e-6?i:-1).filter(i=>i>=0);
+    b.innerHTML=`<div class="card"><div id="wrB"></div><div class="btnrow"><button class="btn green" id="reFin" disabled>✔ 보충 완료</button></div></div>`;
+    const upd=()=>{$('#reFin',b).disabled=!idx.every(i=>S.wr[i].retry>0)};
+    renderWritten($('#wrB',b),idx,'retry',upd);
+    $('#reFin',b).onclick=()=>fin(before,partScore('p7'));
+  }
+}
+
+/* =====================================================================
+   초기화
+===================================================================== */
+const MOUNT={
+  s1(){const b=shell('s1','Stage 1','안전한 실험실 준수 (안전 요원 미션)');
+    gameDress(b,rec=>{applyFirst('p1',rec);gameEquip(b,()=>{S.done.s1=true;unlock('s2');stageEnd(b,'s2','✅ <span class="k-g">Stage 1 클리어!</span> 실험 도구가 활성화되었어요.','Stage 2 : 은빛 변신 ▶')})})},
+  s2(){const b=shell('s2','Stage 2','페트리접시 속 은빛 변신 (구리 + 질산 은 수용액)');const rec=newRec();
+    gameCuLab(b,()=>gameCuMicro(b,rec,()=>gameCuJudge(b,rec,()=>{applyFirst('p2',rec);S.done.s2=true;unlock('s3');stageEnd(b,'s3','✅ <span class="k-g">Stage 2 클리어!</span> 알코올램프와 마그네슘 리본이 활성화되었어요.','Stage 3 : 불꽃 속 전자 ▶')})))},
+  s3(){const b=shell('s3','Stage 3','불꽃 속의 전자 이동 (마그네슘 연소)');const r3=newRec(),r4=newRec();
+    gameMgLab(b,()=>gameMgMicro(b,r3,()=>{applyFirst('p3',r3);gameMgEq(b,r4,()=>{applyFirst('p4',r4);S.done.s3=true;unlock('s4');stageEnd(b,'s4','✅ <span class="k-g">Stage 3 클리어!</span> 최종 분석용 전자 스캐너가 활성화되었어요.','Stage 4 : 전자 분석기 ▶')})}))},
+  s4(){const b=shell('s4','Stage 4 (Final)','전자 이동 분석기 (Master Stage)');
+    gameAnalyzer(b,rec=>{applyFirst('p5',rec);S.done.s4=true;unlock('quiz');stageEnd(b,'quiz','🏁 <span class="k-g">Stage 4 클리어!</span> 산화와 환원은 전자의 이동에 의해 동시에 일어난다!','학습 점검으로 ▶')})},
+  quiz(){mountQuiz()}
+};
+initState();mountIntro();renderTabs();
+</script>
+</body>
+</html>
