@@ -128,7 +128,11 @@ main{max-width:1040px;margin:10px auto 60px;padding:0 18px}
 
 /* ----- 미시 세계 ----- */
 .micro svg{width:100%;height:auto;display:block;background:#fff;border-radius:16px;border:3px solid #d0ebff}
-.el{cursor:grab;touch-action:none}
+.el{cursor:pointer;touch-action:none}
+.el.selected{filter:drop-shadow(0 0 7px #e64980) drop-shadow(0 0 7px #e64980)}
+.ag{cursor:pointer}
+.slotg,[data-drop='O']{cursor:pointer}
+[data-drop='no3']{cursor:pointer}
 .el.used{display:none}
 .wob{animation:wob 1.6s ease-in-out infinite alternate}
 @keyframes wob{from{transform:translate(0,0)}to{transform:translate(3px,-3px)}}
@@ -616,22 +620,37 @@ function gameCuMicro(box,rec,next){
    <div class="eqbox" id="eqbox" style="display:none"></div>
    <div class="btnrow"><button class="btn small ghost" id="hintBtn">💡 힌트</button><button class="btn green glow" id="nextBtn" style="display:none">다음 : 산화·환원 판단하기 ▶</button></div>
   </div>`;
-  const agG=$$('.ag',box),els=$$('.el',box);
+  const agG=$$('.ag',box),els=$$('.el',box),no3G=$$('[data-drop="no3"]',box);
   const updCu=()=>{$('#cuChg',box).textContent='전하 +'+cuLost;$('#iCu',box).innerHTML=`구리(Cu) 전하 : <span class="k-o">${cuLost?'+'+cuLost:'0'}</span>`;$('#iAg',box).innerHTML=`은 이온(Ag⁺) 전하 : <span class="k-r">${agGot.map(g=>g?'0':'+1').join(', ')}</span>`};
-  els.forEach(e=>makeDrag(e,{ghost:eghost,enabled:()=>!finished,onDrop:(t,info)=>{
-    if(!t){if(info.moved>50){tag(rec,'miss',.5);say(box,'전자를 <span class="k-r">이온 위</span>에 정확히 놓아야 해요.','bad');sfx.bad()}return}
-    const d=t.dataset.drop;
-    if(d==='no3'){tag(rec,'wrongTarget');say(box,'질산 이온(NO₃⁻)은 반응에 참여하지 않는 <span class="k-v">구경꾼 이온</span>이에요. 전자를 받을 (+)전하 입자는 누굴까요?','bad');sfx.bad();return}
-    if(d==='ag'){
-      const i=+t.dataset.i;
-      if(agGot[i]){tag(rec,'dup');say(box,'이 은 이온은 이미 전자를 받아 <span class="k-g">Ag 원자</span>가 됐어요. 아직 (+)인 다른 Ag⁺에게!','bad');sfx.bad();return}
-      agGot[i]=true;e.classList.add('used');cuLost++;sfx.zap();
-      const g=agG[i];g.querySelector('.agc').setAttribute('fill','#f1f3f5');g.querySelector('.agc').setAttribute('stroke','#adb5bd');g.querySelector('.agt').textContent='Ag';g.querySelector('.chg').textContent='전하 0';g.querySelector('.chg').setAttribute('fill','#2b9a44');
-      updCu();
-      if(cuLost<2)say(box,'⚡ 전자 1개 이동! Ag⁺ → <span class="k-g">Ag</span> (은 원자). 남은 전자도 옮겨 주세요.','ok');
-      else finish();
-    }else{tag(rec,'miss',.5);say(box,'전자를 <span class="k-r">이온 위</span>에 놓아야 해요.','bad')}
-  }}));
+  let selected=null;
+  const deselect=()=>{if(selected){selected.classList.remove('selected');selected=null}};
+  const selectEl=e=>{if(finished||e.classList.contains('used'))return;if(selected===e){deselect();return}if(selected)selected.classList.remove('selected');selected=e;e.classList.add('selected');sfx.pop();say(box,'⚡ 전자를 선택했어요! 이제 <span class="k-r">은 이온(Ag⁺)</span>을 눌러(클릭해) 전달하세요.','info')};
+  const toAg=(e,i)=>{
+    if(agGot[i]){tag(rec,'dup');say(box,'이 은 이온은 이미 전자를 받아 <span class="k-g">Ag 원자</span>가 됐어요. 아직 (+)인 다른 Ag⁺에게!','bad');sfx.bad();return}
+    agGot[i]=true;e.classList.add('used');cuLost++;sfx.zap();
+    const g=agG[i];g.querySelector('.agc').setAttribute('fill','#f1f3f5');g.querySelector('.agc').setAttribute('stroke','#adb5bd');g.querySelector('.agt').textContent='Ag';g.querySelector('.chg').textContent='전하 0';g.querySelector('.chg').setAttribute('fill','#2b9a44');
+    updCu();
+    if(cuLost<2)say(box,'⚡ 전자 1개 이동! Ag⁺ → <span class="k-g">Ag</span> (은 원자). 남은 전자도 옮겨 주세요.','ok');
+    else finish();
+  };
+  els.forEach(e=>{
+    makeDrag(e,{ghost:eghost,enabled:()=>!finished&&!e.classList.contains('used'),onDrop:(t,info)=>{
+      if(!t){if(info.moved<12){selectEl(e)}else if(info.moved>50){tag(rec,'miss',.5);say(box,'전자를 <span class="k-r">이온 위</span>에 정확히 놓아야 해요.','bad');sfx.bad()}return}
+      deselect();
+      const d=t.dataset.drop;
+      if(d==='no3'){tag(rec,'wrongTarget');say(box,'질산 이온(NO₃⁻)은 반응에 참여하지 않는 <span class="k-v">구경꾼 이온</span>이에요. 전자를 받을 (+)전하 입자는 누굴까요?','bad');sfx.bad();return}
+      if(d==='ag'){toAg(e,+t.dataset.i)}else{tag(rec,'miss',.5);say(box,'전자를 <span class="k-r">이온 위</span>에 놓아야 해요.','bad')}
+    }});
+  });
+  agG.forEach((g,i)=>g.addEventListener('click',()=>{
+    if(finished)return;
+    if(!selected){say(box,'먼저 <span class="k-o">전자(e⁻)</span>를 눌러 선택한 뒤, 은 이온을 눌러 주세요.','info');return}
+    const e=selected;deselect();toAg(e,i);
+  }));
+  no3G.forEach(g=>g.addEventListener('click',()=>{
+    if(finished||!selected)return;
+    deselect();tag(rec,'wrongTarget');say(box,'질산 이온(NO₃⁻)은 반응에 참여하지 않는 <span class="k-v">구경꾼 이온</span>이에요. 전자를 받을 (+)전하 입자는 누굴까요?','bad');sfx.bad();
+  }));
   async function finish(){
     finished=true;say(box,'⚡ 전자 2개가 모두 이동했어요! 무슨 변화가 일어나는지 볼까요?','ok');sfx.ok();await sleep(700);
     $('#gap',box).setAttribute('opacity',1);
@@ -775,16 +794,29 @@ function gameMgMicro(box,rec,next){
    <div class="eqbox" id="eqbox" style="display:none"></div>
    <div class="btnrow"><button class="btn small ghost" id="hintBtn">💡 힌트</button><button class="btn green glow" id="nextBtn" style="display:none">다음 : 완성된 반응식 확인하기 ▶</button></div>
   </div>`;
-  const els=$$('.el',box);
-  els.forEach(e=>makeDrag(e,{ghost:eghost,enabled:()=>!finished,onDrop:(t,info)=>{
-    if(!t||t.dataset.drop!=='O'){if(info.moved>50){tag(rec,'miss',.5);say(box,'전자는 <span class="k-r">산소 원자의 빈자리</span>로 가야 해요!','bad');sfx.bad()}return}
+  const els=$$('.el',box),oTargets=$$('[data-drop="O"]',box);
+  let selected=null;
+  const deselect=()=>{if(selected){selected.classList.remove('selected');selected=null}};
+  const selectEl=e=>{if(finished||e.classList.contains('used'))return;if(selected===e){deselect();return}if(selected)selected.classList.remove('selected');selected=e;e.classList.add('selected');sfx.pop();say(box,'⚡ 전자를 선택했어요! 이제 산소의 <span class="k-r">빈자리(점선 ○)</span>를 눌러 전달하세요.','info')};
+  const toO=e=>{
     const p=sl[moved];e.classList.add('used');moved++;sfx.zap();
     $('#oFill',box).insertAdjacentHTML('beforeend',`<g><circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="9" fill="#ffd43b" stroke="#f08c00" stroke-width="2.5"/></g>`);
     $$('.slotg',box)[moved-1].style.opacity=.25;
     $('#mgChg',box).textContent='전하 +'+moved;$('#oChg',box).textContent='전하 −'+moved;
     $('#iMg',box).innerHTML=`Mg 전하 : <span class="k-o">+${moved}</span>`;$('#iO',box).innerHTML=`O 전하 : <span class="k-r">−${moved}</span>`;
     if(moved<2)say(box,'⚡ 전자 1개 이동! 산소의 빈자리가 하나 더 남았어요.','ok');else finish();
-  }}));
+  };
+  els.forEach(e=>{
+    makeDrag(e,{ghost:eghost,enabled:()=>!finished&&!e.classList.contains('used'),onDrop:(t,info)=>{
+      if(!t||t.dataset.drop!=='O'){if(info.moved<12){selectEl(e)}else if(info.moved>50){tag(rec,'miss',.5);say(box,'전자는 <span class="k-r">산소 원자의 빈자리</span>로 가야 해요!','bad');sfx.bad()}return}
+      deselect();toO(e);
+    }});
+  });
+  oTargets.forEach(g=>g.addEventListener('click',()=>{
+    if(finished||moved>=2)return;
+    if(!selected){say(box,'먼저 <span class="k-o">전자(e⁻)</span>를 눌러 선택한 뒤, 산소의 빈자리를 눌러 주세요.','info');return}
+    const e=selected;deselect();toO(e);
+  }));
   async function finish(){
     finished=true;sfx.ok();say(box,'⚡ 전자 2개 이동 완료! Mg와 O에 어떤 변화가 생길까요?','ok');await sleep(700);
     $('#ring3',box).style.opacity=0;$('#ring3',box).style.transition='opacity .8s';
